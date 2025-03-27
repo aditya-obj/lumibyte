@@ -114,233 +114,252 @@ export default function QuestionsPage() {
   };
 
   return (
-    <div className="min-h-screen p-8">
-      <h1 className="text-3xl font-bold mb-8">Add New Question</h1>
+    <div className="min-h-screen p-8 flex flex-col items-center">
+      {/* Main content container with max-width */}
+      <div className="w-full max-w-5xl space-y-6">
+        {/* Title */}
+        <h1 className="text-3xl font-bold text-center mb-8">Add New Question</h1>
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-          Question added successfully!
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
-        <div>
-          <label className="block text-sm font-medium mb-2">Question Title</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">Question Description (Markdown)</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-            rows={4}
-            placeholder="Write your question description using Markdown format"
-            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary focus:border-transparent font-mono"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">Examples (Markdown)</label>
-          <textarea
-            value={examples}
-            onChange={(e) => setExamples(e.target.value)}
-            required
-            rows={3}
-            placeholder="Provide example inputs and outputs using Markdown format"
-            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary focus:border-transparent font-mono"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">Constraints (Markdown)</label>
-          <textarea
-            value={constraints}
-            onChange={(e) => setConstraints(e.target.value)}
-            required
-            rows={2}
-            placeholder="List the constraints using Markdown format"
-            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary focus:border-transparent font-mono"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">Topic</label>
-          <select
-            value={showCustomTopic ? 'Others' : topic}
-            onChange={(e) => {
-              const selectedTopic = e.target.value;
-              if (selectedTopic === 'Others') {
-                setShowCustomTopic(true);
-                if (!customTopic) {
-                  setTopic('');
-                }
-              } else {
-                setShowCustomTopic(false);
-                setCustomTopic('');
-                setTopic(selectedTopic);
-              }
-            }}
-            required
-            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary focus:border-transparent"
-          >
-            <option value="">Select a topic</option>
-            {topics.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-          {showCustomTopic && (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Question Title */}
+          <div className="glass-container p-6 rounded-xl backdrop-blur-sm">
+            <label className="block text-sm font-medium mb-2 text-gray-300">Question Title</label>
             <input
               type="text"
-              value={customTopic}
-              onChange={(e) => {
-                const newTopic = e.target.value;
-                setCustomTopic(newTopic);
-                setTopic(newTopic);
-              }}
-              placeholder="Enter custom topic"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+              placeholder="Enter question title..."
               required
-              className="mt-2 w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary focus:border-transparent"
             />
-          )}
-        </div>
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-2">Difficulty</label>
-          <select
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary focus:border-transparent"
-          >
-            <option value="Easy">Easy</option>
-            <option value="Medium">Medium</option>
-            <option value="Hard">Hard</option>
-          </select>
-        </div>
+          {/* Topic Selection */}
+          <div className="glass-container p-6 rounded-xl backdrop-blur-sm">
+            <label className="block text-sm font-medium mb-2 text-gray-300">Topic</label>
+            <div className="flex flex-wrap gap-3 justify-center">
+              {topics.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => {
+                    setTopic(t);
+                    if (t === 'Others') {
+                      setShowCustomTopic(true);
+                    } else {
+                      setShowCustomTopic(false);
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-full transition-all duration-300 ${
+                    topic === t
+                      ? 'bg-purple-500 text-white shadow-[0_0_20px_rgba(168,85,247,0.5)]'
+                      : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            
+            {/* Custom Topic Input */}
+            {showCustomTopic && (
+              <input
+                type="text"
+                value={customTopic}
+                onChange={(e) => setCustomTopic(e.target.value)}
+                className="mt-4 w-full px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                placeholder="Enter custom topic..."
+              />
+            )}
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-2">Start Code</label>
-          <div className="h-[300px] rounded-lg overflow-hidden border">
+          {/* Question Description */}
+          <div className="glass-container p-6 rounded-xl backdrop-blur-sm">
+            <label className="block text-sm font-medium mb-2 text-gray-300">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-[800px] h-[200px] px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 resize-none"
+              placeholder="Enter question description..."
+              required
+            />
+          </div>
+
+          {/* Examples */}
+          <div className="glass-container p-6 rounded-xl backdrop-blur-sm">
+            <label className="block text-sm font-medium mb-2 text-gray-300">Examples (Markdown)</label>
+            <textarea
+              value={examples}
+              onChange={(e) => setExamples(e.target.value)}
+              required
+              className="w-[800px] h-[150px] px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 font-mono resize-none"
+              placeholder="Add example inputs and outputs..."
+            />
+          </div>
+
+          {/* Constraints */}
+          <div className="glass-container p-6 rounded-xl backdrop-blur-sm">
+            <label className="block text-sm font-medium mb-2 text-gray-300">Constraints (Markdown)</label>
+            <textarea
+              value={constraints}
+              onChange={(e) => setConstraints(e.target.value)}
+              required
+              className="w-[800px] h-[100px] px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 font-mono resize-none"
+              placeholder="Add problem constraints..."
+            />
+          </div>
+
+          {/* Difficulty Selection */}
+          <div className="glass-container p-6 rounded-xl backdrop-blur-sm">
+            <label className="block text-sm font-medium mb-2 text-gray-300">Difficulty</label>
+            <div className="flex gap-3">
+              {['Easy', 'Medium', 'Hard'].map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDifficulty(d)}
+                  className={`px-6 py-2 rounded-full transition-all duration-300 ${
+                    difficulty === d
+                      ? d.toLowerCase() === 'easy'
+                        ? 'bg-green-500/20 text-green-400 shadow-[0_0_20px_rgba(34,197,94,0.3)]'
+                        : d.toLowerCase() === 'medium'
+                        ? 'bg-yellow-500/20 text-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.3)]'
+                        : 'bg-red-500/20 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.3)]'
+                      : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50'
+                  }`}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Starter Code */}
+          <div className="glass-container p-6 rounded-xl backdrop-blur-sm">
+            <label className="block text-sm font-medium mb-2 text-gray-300">Starter Code</label>
             <Editor
-              height="100%"
+              height="200px"
+              defaultLanguage="python"
               value={startCode}
-              language="python"
-              theme="vs-dark"
               onChange={setStartCode}
+              theme="vs-dark"
               options={{
                 minimap: { enabled: false },
                 fontSize: 14,
-                padding: { top: 12, bottom: 12 }
               }}
+              className="rounded-lg overflow-hidden"
             />
           </div>
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-2">Solutions</label>
-          {solutions.map((solution, index) => (
-            <div key={index} className="mb-6 p-4 border rounded-lg">
-              <div className="flex gap-4 mb-4">
-                <input
-                  type="text"
-                  value={solution.title}
-                  onChange={(e) => {
-                    const newSolutions = [...solutions];
-                    newSolutions[index].title = e.target.value;
-                    setSolutions(newSolutions);
-                  }}
-                  placeholder="Solution Title"
-                  required
-                  className="flex-1 px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-                <input
-                  type="text"
-                  value={solution.timeComplexity}
-                  onChange={(e) => {
-                    const newSolutions = [...solutions];
-                    newSolutions[index].timeComplexity = e.target.value;
-                    setSolutions(newSolutions);
-                  }}
-                  placeholder="Time Complexity (e.g. O(n))"
-                  required
-                  className="flex-1 px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-              </div>
-              <textarea
-                value={solution.approach}
-                onChange={(e) => {
-                  const newSolutions = [...solutions];
-                  newSolutions[index].approach = e.target.value;
-                  setSolutions(newSolutions);
-                }}
-                placeholder="Solution Approach (Optional)"
-                rows={2}
-                className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary focus:border-transparent mb-4"
-              />
-              {solutions.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newSolutions = solutions.filter((_, i) => i !== index);
-                    setSolutions(newSolutions);
-                  }}
-                  className="text-red-500 hover:text-red-700 mb-4"
-                >
-                  Delete
-                </button>
-              )}
-              <div className="h-[300px] rounded-lg overflow-hidden border">
-                <Editor
-                  height="100%"
-                  value={solution.code}
-                  language="python"
-                  theme="vs-dark"
-                  onChange={(value) => {
-                    const newSolutions = [...solutions];
-                    newSolutions[index].code = value;
-                    setSolutions(newSolutions);
-                  }}
-                  options={{
-                    minimap: { enabled: false },
-                    fontSize: 14,
-                    padding: { top: 12, bottom: 12 }
-                  }}
-                />
-              </div>
+          {/* Solutions */}
+          <div className="glass-container p-6 rounded-xl backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-4">
+              <label className="block text-sm font-medium text-gray-300">Solutions</label>
+              <button
+                type="button"
+                onClick={() => setSolutions([...solutions, { title: '', code: '', timeComplexity: '', approach: '' }])}
+                className="glass-button bg-gradient-to-r from-green-400 to-emerald-500 text-white w-8 h-8 rounded-lg transition-all duration-300 hover:shadow-[0_0_20px_rgba(52,211,153,0.5)] hover:-translate-y-1 flex items-center justify-center text-xl"
+              >
+                +
+              </button>
             </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => setSolutions([...solutions, { title: '', code: 'def solution():\n    # Write your solution here\n    pass', timeComplexity: '', approach: '' }])}
-            className="mt-4 flex items-center text-primary hover:text-primary-hover"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add Another Solution
-          </button>
-        </div>
+            
+            {solutions.map((solution, index) => (
+              <div key={index} className="mb-6 last:mb-0 animate-fadeIn">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-300">Solution {index + 1}</h3>
+                  {index > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSolutions(solutions.filter((_, i) => i !== index))}
+                      className="text-red-400 hover:text-red-300 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                
+                {/* Title and Time Complexity side by side */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-gray-300">Title</label>
+                    <input
+                      type="text"
+                      value={solution.title}
+                      onChange={(e) => {
+                        const newSolutions = [...solutions];
+                        newSolutions[index].title = e.target.value;
+                        setSolutions(newSolutions);
+                      }}
+                      className="w-full px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                      placeholder="Solution title..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-gray-300">Time Complexity</label>
+                    <input
+                      type="text"
+                      value={solution.timeComplexity}
+                      onChange={(e) => {
+                        const newSolutions = [...solutions];
+                        newSolutions[index].timeComplexity = e.target.value;
+                        setSolutions(newSolutions);
+                      }}
+                      className="w-full px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                      placeholder="e.g., O(n)"
+                    />
+                  </div>
+                </div>
 
-        <button
-          type="submit"
-          className="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg transition-colors"
-        >
-          Add Question
-        </button>
-      </form>
+                {/* Optional Approach field */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2 text-gray-300">
+                    Approach (Optional)
+                  </label>
+                  <textarea
+                    value={solution.approach}
+                    onChange={(e) => {
+                      const newSolutions = [...solutions];
+                      newSolutions[index].approach = e.target.value;
+                      setSolutions(newSolutions);
+                    }}
+                    className="w-[800px] h-[150px] px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 resize-none"
+                    placeholder="Explain your approach..."
+                  />
+                </div>
+
+                {/* Code Editor */}
+                <div className="h-[300px] rounded-lg overflow-hidden">
+                  <Editor
+                    height="100%"
+                    defaultValue={solution.code}
+                    language="python"
+                    theme="vs-dark"
+                    onChange={(value) => {
+                      const newSolutions = [...solutions];
+                      newSolutions[index].code = value;
+                      setSolutions(newSolutions);
+                    }}
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 14,
+                      padding: { top: 16, bottom: 16 },
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="w-full glass-button bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-3 rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:-translate-y-1"
+          >
+            Add Question
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
