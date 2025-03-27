@@ -1,103 +1,212 @@
-import Image from "next/image";
+'use client';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Login from '@/components/Login';
+import { auth, db } from '@/components/firebase.config';
+import { ref, get } from 'firebase/database';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [currentQuestion, setCurrentQuestion] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [user, setUser] = useState(null);
+  const [topics, setTopics] = useState([]);
+  const [selectedTopics, setSelectedTopics] = useState([]);
+  const [showTopicDropdown, setShowTopicDropdown] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const [questions, setQuestions] = useState([]);
+
+  useEffect(() => {
+    if (user) {
+      // Fetch topics
+      const topicsRef = ref(db, `users/${user.uid}/topics`);
+      get(topicsRef).then((snapshot) => {
+        if (snapshot.exists()) {
+          const topicsData = Object.values(snapshot.val());
+          setTopics(topicsData);
+        }
+      });
+
+      // Fetch questions
+      const questionsRef = ref(db, `users/${user.uid}/questions`);
+      get(questionsRef).then((snapshot) => {
+        if (snapshot.exists()) {
+          const questionsData = [];
+          snapshot.forEach((childSnapshot) => {
+            const question = childSnapshot.val();
+            questionsData.push({
+              id: childSnapshot.key,
+              title: question.title,
+              topic: question.topic,
+              difficulty: question.difficulty
+            });
+          });
+          setQuestions(questionsData);
+        }
+      });
+    }
+  }, [user]);
+
+  const createSlug = (text) => {
+    return text
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+      .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+  };
+
+  const handleRandomize = () => {
+    const filteredQuestions = selectedTopics.length > 0
+      ? questions.filter(q => selectedTopics.includes(q.topic))
+      : questions;
+    
+    if (filteredQuestions.length > 0) {
+      const randomIndex = Math.floor(Math.random() * filteredQuestions.length);
+      setCurrentQuestion(filteredQuestions[randomIndex]);
+    }
+  };
+
+  const handleTopicSelect = (topic) => {
+    if (!selectedTopics.includes(topic)) {
+      setSelectedTopics([...selectedTopics, topic]);
+    }
+    setShowTopicDropdown(false);
+  };
+
+  const handleRemoveTopic = (topicToRemove) => {
+    setSelectedTopics(selectedTopics.filter(topic => topic !== topicToRemove));
+  };
+
+  const handleClearTopics = () => {
+    setSelectedTopics([]);
+  };
+
+  return (
+    <div className="min-h-screen p-8 transition-colors relative">
+      <div className="absolute top-8 right-8">
+        {user ? (
+          <button 
+            onClick={() => auth.signOut()}
+            className="bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg transition-colors shadow-sm"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            Logout
+          </button>
+        ) : (
+          <button 
+            onClick={() => setShowLogin(true)}
+            className="bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg transition-colors shadow-sm"
           >
-            Read our docs
-          </a>
+            Login
+          </button>
+        )}
+      </div>
+
+      <h1 className="text-4xl font-bold mb-12 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+        DSA Practice
+      </h1>
+      
+      {showLogin && <Login onClose={() => setShowLogin(false)} />}
+
+      <div className="space-y-4">
+        <div className="flex gap-4">
+          <button 
+            onClick={handleRandomize}
+            className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-lg transition-colors shadow-sm"
+          >
+            Randomize Question
+          </button>
+
+          <Link 
+            href="/questions"
+            className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-lg transition-colors shadow-sm"
+          >
+            Add Questions
+          </Link>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <button
+              onClick={() => setShowTopicDropdown(!showTopicDropdown)}
+              className="bg-accent hover:bg-accent-hover text-white p-2 rounded-lg transition-colors shadow-sm"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+              </svg>
+            </button>
+            {showTopicDropdown && (
+              <div className="absolute z-10 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5">
+                <div className="py-1" role="menu">
+                  {topics.map((topic) => (
+                    <button
+                      key={topic}
+                      onClick={() => handleTopicSelect(topic)}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      role="menuitem"
+                    >
+                      {topic}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {selectedTopics.map((topic) => (
+            <span
+              key={topic}
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary text-white text-sm"
+            >
+              {topic}
+              <button
+                onClick={() => handleRemoveTopic(topic)}
+                className="hover:text-red-300"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+
+          {selectedTopics.length > 0 && (
+            <button
+              onClick={handleClearTopics}
+              className="text-sm text-gray-500 hover:text-gray-400 dark:text-gray-400 dark:hover:text-gray-300"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      </div>
+
+      {currentQuestion && (
+        <div className="mt-8 p-6 rounded-xl bg-code-bg shadow-sm">
+          <h2 className="text-2xl font-semibold">
+            {currentQuestion.title}
+          </h2>
+          <div className="flex items-center gap-4 mt-3 text-secondary">
+            <span>Topic: {currentQuestion.topic}</span>
+            <span className={`px-3 py-1 rounded ${currentQuestion.difficulty.toLowerCase() === 'easy' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' : currentQuestion.difficulty.toLowerCase() === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'}`}>
+              {currentQuestion.difficulty}
+            </span>
+          </div>
+          <Link 
+            href={`/${createSlug(currentQuestion.topic)}/${createSlug(currentQuestion.title)}`}
+            className="mt-6 inline-block bg-accent hover:bg-accent-hover text-white px-6 py-3 rounded-lg transition-colors shadow-sm"
+          >
+            Go to Question
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
