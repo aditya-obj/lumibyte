@@ -16,6 +16,10 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
+  const handleAuthRequired = () => {
+    setShowLogin(true);
+  };
+
   useEffect(() => {
     setIsMounted(true);
     
@@ -76,6 +80,10 @@ export default function Home() {
   };
 
   const handleRandomize = () => {
+    if (!user) {
+      handleAuthRequired();
+      return;
+    }
     setIsLoading(true);
     
     setTimeout(() => {
@@ -110,6 +118,10 @@ export default function Home() {
   };
 
   const handleTopicSelect = (topic) => {
+    if (!user) {
+      handleAuthRequired();
+      return;
+    }
     if (!selectedTopics.includes(topic)) {
       setSelectedTopics([...selectedTopics, topic]);
     }
@@ -193,15 +205,27 @@ export default function Home() {
       <div className="space-y-6">
         {/* Action Buttons with improved layout */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <Link 
-            href="/questions"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:-translate-y-1 group"
-          >
-            <svg className="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add Questions
-          </Link>
+          {!user ? (
+            <button 
+              onClick={handleAuthRequired}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:-translate-y-1 group"
+            >
+              <svg className="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Questions
+            </button>
+          ) : (
+            <Link 
+              href="/questions"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:-translate-y-1 group"
+            >
+              <svg className="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Questions
+            </Link>
+          )}
           
           {user && (
             <Link 

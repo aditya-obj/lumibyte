@@ -2,10 +2,11 @@
 import Editor from '@monaco-editor/react';
 import { marked } from 'marked';
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { auth, db } from '@/components/firebase.config';
-import { format } from 'date-fns';
-import { get, ref, update } from 'firebase/database';
+import { format, startOfDay } from 'date-fns';
+import { get, ref, set, update } from 'firebase/database';
 
 const createSlug = (text) => {
   return text
@@ -31,6 +32,7 @@ export default function QuestionPage({ params }) {
   const [showSolutions, setShowSolutions] = useState(false); // Keep state for toggling official solutions
   const [revealedSolutions, setRevealedSolutions] = useState(new Set());
   const [isRevising, setIsRevising] = useState(false);
+  const router = useRouter();
 
   const handleTabChange = (index) => {
     setActiveTab(index);
@@ -46,19 +48,40 @@ export default function QuestionPage({ params }) {
     setIsRevising(true);
     try {
       const timestamp = Date.now();
-      const questionRef = ref(db, `users/${user.uid}/questions/${question.id}`);
+      const today = startOfDay(new Date()).getTime();
       
+      // Update question's last revised timestamp
+      const questionRef = ref(db, `users/${user.uid}/questions/${question.id}`);
       await update(questionRef, {
         lastRevised: timestamp
       });
+
+      // Update streak data
+      const streakRef = ref(db, `users/${user.uid}/streak/${today}`);
+      const streakSnapshot = await get(streakRef);
+      
+      if (streakSnapshot.exists()) {
+        // Increment existing count
+        await update(streakRef, {
+          count: streakSnapshot.val().count + 1
+        });
+      } else {
+        // Initialize new date entry
+        await set(streakRef, {
+          count: 1
+        });
+      }
 
       // Update local state
       setQuestion(prev => ({
         ...prev,
         lastRevised: timestamp
       }));
+      
+      // Optionally redirect to home
+      router.push('/');
     } catch (error) {
-      console.error('Error updating revision timestamp:', error);
+      console.error('Error updating revision data:', error);
     } finally {
       setIsRevising(false);
     }
