@@ -1,12 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
-import React from 'react';
 import Editor from '@monaco-editor/react';
 import { marked } from 'marked';
+import React, { useEffect, useState } from 'react';
 
 import { auth, db } from '@/components/firebase.config';
-import { ref, get, update } from 'firebase/database';
 import { format } from 'date-fns';
+import { get, ref, update } from 'firebase/database';
 
 const createSlug = (text) => {
   return text
@@ -22,14 +21,14 @@ const createSlug = (text) => {
 
 export default function QuestionPage({ params }) {
   const unwrappedParams = React.use(params);
-  const [showSolution, setShowSolution] = useState(false);
+  // Removed showSolution state as layout is now grid-based
   const [activeTab, setActiveTab] = useState(0);
   const [question, setQuestion] = useState(null);
   const [userSolutions, setUserSolutions] = useState([{ code: '', timeComplexity: '' }]);
   const [activeUserSolution, setActiveUserSolution] = useState(0);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [showSolutions, setShowSolutions] = useState(false);
+  const [showSolutions, setShowSolutions] = useState(false); // Keep state for toggling official solutions
   const [revealedSolutions, setRevealedSolutions] = useState(new Set());
   const [isRevising, setIsRevising] = useState(false);
 
@@ -72,7 +71,8 @@ export default function QuestionPage({ params }) {
 
   useEffect(() => {
     if (question) {
-      setUserSolutions([{ code: question.empty_code, timeComplexity: '' }]);
+      // Initialize with empty code structure from the question data
+      setUserSolutions([{ code: question.empty_code || '', timeComplexity: '' }]);
     }
   }, [question]);
 
@@ -85,65 +85,90 @@ export default function QuestionPage({ params }) {
 
   useEffect(() => {
     const fetchQuestion = async () => {
+      setLoading(true); // Start loading
       if (user && unwrappedParams) {
         const questionsRef = ref(db, `users/${user.uid}/questions`);
-        const snapshot = await get(questionsRef);
-        if (snapshot.exists()) {
-          let foundQuestion = null;
-          snapshot.forEach((childSnapshot) => {
-            const q = childSnapshot.val();
-            if (createSlug(q.topic) === unwrappedParams.topic && 
-                createSlug(q.title) === unwrappedParams.questionTitle) {
-              foundQuestion = {
-                id: childSnapshot.key,
-                ...q
-              };
-            }
-          });
-          setQuestion(foundQuestion);
+        try {
+          const snapshot = await get(questionsRef);
+          if (snapshot.exists()) {
+            let foundQuestion = null;
+            snapshot.forEach((childSnapshot) => {
+              const q = childSnapshot.val();
+              if (createSlug(q.topic) === unwrappedParams.topic && 
+                  createSlug(q.title) === unwrappedParams.questionTitle) {
+                foundQuestion = {
+                  id: childSnapshot.key,
+                  ...q
+                };
+              }
+            });
+            setQuestion(foundQuestion);
+          } else {
+            setQuestion(null); // No questions found for user
+          }
+        } catch (error) {
+          console.error("Error fetching question:", error);
+          setQuestion(null); // Set question to null on error
         }
+      } else {
+         // Handle case where user or params are not available yet
+         // Depending on logic, you might want to wait or set question to null
+         if (!user) console.log("Waiting for user auth...");
+         if (!unwrappedParams) console.log("Waiting for params...");
+         // Keep loading until user and params are available
       }
-      setLoading(false);
+      // Only set loading to false after attempting fetch or if conditions aren't met
+      if (user && unwrappedParams) {
+        setLoading(false);
+      } else if (!user) {
+         // If user is definitively null (not just loading), stop loading
+         const unsubscribe = auth.onAuthStateChanged(currentUser => {
+           if (!currentUser) setLoading(false);
+         });
+         // Cleanup listener if component unmounts before auth state change
+         setTimeout(() => unsubscribe(), 5000); // Example timeout
+      }
     };
 
     fetchQuestion();
   }, [user, unwrappedParams]);
 
   if (loading) {
-    return <div className="min-h-screen p-8">Loading...</div>;
+    // Consistent dark theme loading state
+    return <div className="min-h-screen p-8 bg-gray-900 text-gray-100 flex items-center justify-center">Loading...</div>;
   }
 
   if (!question) {
-    return <div className="min-h-screen p-8">Question not found</div>;
+    // Consistent dark theme not found state
+    return <div className="min-h-screen p-8 bg-gray-900 text-gray-100 flex items-center justify-center">Question not found or access denied.</div>;
   }
 
   return (
-    <div className="min-h-screen p-8 transition-colors relative overflow-hidden">
-      {/* Animated background blobs */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-0 -left-48 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-blob"></div>
-        <div className="absolute bottom-0 -right-48 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-      </div>
+    // Dark theme base: bg-gray-900, text-gray-100. Responsive padding.
+    <div className="min-h-screen p-4 sm:p-6 md:p-8 bg-gray-900 text-gray-100">
+      {/* Max-width container */}
+      <div className="max-w-7xl mx-auto">
+        {/* Header section */}
+        <div className="flex flex-col sm:flex-row justify-between items-start mb-6"> {/* Reduced margin */}
+          {/* Title - Dark theme style */}
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-100 mb-3 sm:mb-0"> {/* Slightly smaller title */}
+            {question?.title}
+          </h1>
 
-      {/* Header section with title and revised button */}
-      <div className="flex justify-between items-start mb-6">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
-          {question?.title}
-        </h1>
-
-        <button
-          onClick={handleRevision}
-          disabled={isRevising}
-          className={`
-            glass-button bg-gradient-to-r from-emerald-500 to-green-500 
-            text-white px-6 py-2.5 rounded-xl transition-all duration-300 
-            hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] hover:-translate-y-1
-            disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-            flex items-center gap-2 text-sm
-          `}
-        >
+          {/* Mark as Revised Button - Dark theme style */}
+          <button
+            onClick={handleRevision}
+            disabled={isRevising}
+            className={`
+              bg-emerald-600 hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-gray-900
+              text-white px-4 py-1.5 rounded-md transition-colors duration-200 /* Adjusted padding/rounding */
+              disabled:opacity-60 disabled:cursor-not-allowed
+              flex items-center gap-1.5 text-xs font-medium shrink-0 /* Adjusted gap/size */
+            `}
+          >
           {isRevising ? (
             <>
+              {/* Spinner Icon */}
               <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -152,272 +177,280 @@ export default function QuestionPage({ params }) {
             </>
           ) : (
             <>
+              {/* Checkmark Icon */}
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               <span>Mark as Revised</span>
             </>
           )}
-        </button>
-      </div>
-      
-      {/* Topic, Difficulty, and Last Revised badges */}
-      <div className="flex gap-4 mb-8 items-center flex-wrap">
-        <span className="glass-container px-4 py-2 rounded-full text-sm font-medium">
-          {question?.topic}
-        </span>
-        <span className={`
-          glass-container px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105
-          ${question?.difficulty.toLowerCase() === 'easy' 
-            ? 'bg-green-500/10 text-green-400' 
-            : question?.difficulty.toLowerCase() === 'medium'
-            ? 'bg-yellow-500/10 text-yellow-400'
-            : 'bg-red-500/10 text-red-400'}
-        `}>
-          {question?.difficulty}
-        </span>
-        {question?.lastRevised && (
-          <span className="glass-container px-4 py-2 rounded-full text-sm font-medium text-blue-400">
-            Last revised: {formatDate(question.lastRevised)}
-          </span>
-        )}
-      </div>
-
-      {/* Question content in a glass container */}
-      <div className="glass-container rounded-xl p-8 mb-8 backdrop-blur-lg">
-        <div className="prose prose-invert max-w-none">
-          <div className="mb-6 animate-fadeInUp" style={{ animationDelay: '0.1s' }}>
-            <h2 className="text-xl font-semibold mb-2">Description</h2>
-            <div dangerouslySetInnerHTML={{ __html: marked(question?.description || '') }} />
-          </div>
-
-          <div className="mb-6 animate-fadeInUp" style={{ animationDelay: '0.2s' }}>
-            <h2 className="text-xl font-semibold mb-2">Examples</h2>
-            <div dangerouslySetInnerHTML={{ __html: marked(question?.examples || '') }} />
-          </div>
-
-          <div className="mb-6 animate-fadeInUp" style={{ animationDelay: '0.3s' }}>
-            <h2 className="text-xl font-semibold mb-2">Constraints</h2>
-            <div dangerouslySetInnerHTML={{ __html: marked(question?.constraints || '') }} />
-          </div>
+          </button>
         </div>
-      </div>
 
-      {/* Solution toggle button - only show on mobile */}
-      <button 
-        onClick={() => setShowSolution(!showSolution)}
-        className="glass-button bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:-translate-y-1 mb-8 lg:hidden"
-      >
-        {showSolution ? 'Hide Solution' : 'Show Solution'}
-      </button>
+        {/* Badges - Dark theme style */}
+        <div className="flex gap-2 mb-8 items-center flex-wrap"> {/* Reduced gap/margin */}
+          {/* Topic Badge */}
+          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-300 border border-gray-600"> {/* Adjusted padding */}
+            {question?.topic}
+          </span>
+          {/* Difficulty Badge */}
+          <span className={`
+            px-2.5 py-1 rounded-full text-xs font-medium border transition-colors duration-300 /* Adjusted padding */
+            ${question?.difficulty.toLowerCase() === 'easy' 
+              ? 'bg-green-900/50 text-green-300 border-green-700' 
+              : question?.difficulty.toLowerCase() === 'medium'
+              ? 'bg-yellow-900/50 text-yellow-300 border-yellow-700'
+              : 'bg-red-900/50 text-red-300 border-red-700'}
+          `}>
+            {question?.difficulty}
+          </span>
+          {/* Last Revised Badge */}
+          {question?.lastRevised && (
+            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-900/50 text-blue-300 border border-blue-700"> {/* Adjusted padding */}
+              Revised: {formatDate(question.lastRevised)}
+            </span>
+          )}
+        </div>
 
-      {/* Two-column layout for code sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Your Solutions Section */}
-        <div className="glass-container rounded-xl p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Your Solutions
-            </h2>
-            <button
-              onClick={() => setUserSolutions([...userSolutions, { code: question?.empty_code, timeComplexity: '' }])}
-              className="glass-button bg-gradient-to-r from-green-400 to-emerald-500 text-white w-8 h-8 rounded-lg transition-all duration-300 hover:shadow-[0_0_20px_rgba(52,211,153,0.5)] hover:-translate-y-1 flex items-center justify-center text-xl"
-            >
-              +
-            </button>
+        {/* Main Content Grid - Two Columns on Large Screens */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"> {/* Reduced gap */}
+          
+          {/* Left Column: Problem Details */}
+          <div className="space-y-6"> {/* Reduced space */}
+            {/* Question Content Card - Dark theme style */}
+            <div className="bg-gray-800 rounded-lg border border-gray-700 shadow-md p-5 md:p-6"> {/* Adjusted padding/rounding */}
+              {/* Prose styles for dark theme - Further adjusted pre styling for seamless look */}
+              <div className="prose prose-invert max-w-none prose-sm md:prose-base prose-pre:p-0 prose-pre:my-2 prose-pre:bg-transparent prose-pre:border-none prose-code:text-pink-400 prose-headings:text-gray-100 prose-headings:font-semibold prose-headings:mb-3 prose-headings:pb-2 prose-headings:border-b prose-headings:border-gray-600 prose-a:text-blue-400 hover:prose-a:text-blue-300">
+                <div> {/* Removed mb-6 */}
+                  <h2 className="text-lg md:text-xl">Description</h2>
+                  <div className="text-gray-300" dangerouslySetInnerHTML={{ __html: marked(question?.description || '') }} />
+                </div>
+
+                <div> {/* Removed mb-6 */}
+                  <h2 className="text-lg md:text-xl">Examples</h2>
+                  <div className="text-gray-300" dangerouslySetInnerHTML={{ __html: marked(question?.examples || '') }} />
+                </div>
+
+                <div>
+                  <h2 className="text-lg md:text-xl">Constraints</h2>
+                  <div className="text-gray-300" dangerouslySetInnerHTML={{ __html: marked(question?.constraints || '') }} />
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Solution tabs */}
-          <div className="flex border-b border-gray-700/50 mb-4 overflow-x-auto">
-            {userSolutions.map((_, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-2 px-4 py-2 font-medium whitespace-nowrap relative group"
-              >
-                <span
-                  onClick={() => setActiveUserSolution(index)}
-                  className={`cursor-pointer transition-all duration-300 ${
-                    activeUserSolution === index 
-                      ? 'text-primary border-b-2 border-primary scale-105' 
-                      : 'text-gray-400 hover:text-gray-300'
-                  }`}
+          {/* Right Column: Solutions */}
+          <div className="space-y-6"> {/* Reduced space */}
+            {/* Your Solutions Card - Dark theme style */}
+            <div className="bg-gray-800 rounded-lg border border-gray-700 shadow-md p-5 md:p-6"> {/* Adjusted padding/rounding */}
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-100"> {/* Adjusted size */}
+                  Your Solutions
+                </h2>
+                {/* Add Solution Button - Dark theme style */}
+                <button
+                  onClick={() => setUserSolutions([...userSolutions, { code: question?.empty_code || '', timeComplexity: '' }])}
+                  className="bg-green-600 hover:bg-green-700 text-white w-7 h-7 rounded-md transition-colors duration-200 flex items-center justify-center text-lg font-light focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-800" /* Adjusted size/rounding */
+                  aria-label="Add new solution"
                 >
-                  Solution {index + 1}
-                </span>
-                {userSolutions.length > 1 && (
-                  <button
-                    onClick={() => {
-                      const newSolutions = userSolutions.filter((_, i) => i !== index);
-                      setUserSolutions(newSolutions);
-                      if (activeUserSolution >= newSolutions.length) {
-                        setActiveUserSolution(newSolutions.length - 1);
-                      }
-                    }}
-                    className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-400 transition-all duration-300"
+                  +
+                </button>
+              </div>
+
+              {/* Solution Tabs - Dark theme style */}
+              <div className="flex border-b border-gray-600 mb-4 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-700 pb-px">
+                {userSolutions.map((_, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center relative group mr-1"
                   >
-                    ×
+                    {/* Tab Button */}
+                    <button
+                      onClick={() => setActiveUserSolution(index)}
+                      className={`px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors duration-200 border-b-2 ${ /* Adjusted padding */
+                        activeUserSolution === index 
+                          ? 'text-blue-400 border-blue-400' 
+                          : 'text-gray-400 hover:text-gray-200 border-transparent hover:border-gray-500'
+                      }`}
+                    >
+                      Solution {index + 1}
+                    </button>
+                    {/* Remove Button */}
+                    {userSolutions.length > 1 && (
+                      <button
+                        onClick={() => {
+                          const newSolutions = userSolutions.filter((_, i) => i !== index);
+                          setUserSolutions(newSolutions);
+                          // Adjust active tab if the removed one was active or last
+                          if (activeUserSolution === index) {
+                            setActiveUserSolution(Math.max(0, index - 1));
+                          } else if (activeUserSolution > index) {
+                             setActiveUserSolution(activeUserSolution - 1);
+                          } else if (activeUserSolution >= newSolutions.length) {
+                             setActiveUserSolution(Math.max(0, newSolutions.length - 1));
+                          }
+                        }}
+                        className="ml-1 p-0.5 opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-400 hover:bg-gray-700 rounded-full transition-all duration-200 text-base leading-none focus:opacity-100 focus:ring-1 focus:ring-red-500" /* Adjusted size/padding */
+                        aria-label={`Remove Solution ${index + 1}`}
+                      >
+                        &times;
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Code Editor Container - Dark theme style */}
+              {/* Adjusted height slightly */}
+              <div className="h-[400px] md:h-[450px] rounded-md overflow-hidden border border-gray-600 shadow-md"> 
+                <Editor
+                  height="100%"
+                  value={userSolutions[activeUserSolution]?.code || ''}
+                  language="python"
+                  theme="vs-dark" // Ensure dark theme for editor
+                  onChange={(value = '') => {
+                    const newSolutions = [...userSolutions];
+                    if (newSolutions[activeUserSolution]) {
+                      newSolutions[activeUserSolution].code = value;
+                      setUserSolutions(newSolutions);
+                    } else {
+                      // Handle case where activeUserSolution might be out of bounds briefly after deletion
+                      console.warn("Attempted to update code for non-existent solution index:", activeUserSolution);
+                    }
+                  }}
+                  options={{
+                    fontSize: 13,
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    roundedSelection: true,
+                    padding: { top: 12, bottom: 12 }, // Adjusted padding
+                    cursorBlinking: "smooth",
+                    wordWrap: "on",
+                    automaticLayout: true,
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Show/Hide Official Solutions Section */}
+            {!showSolutions && (
+              <div className="flex items-start justify-center">
+                {/* Show Solutions Button - Dark theme style */}
+                <button 
+                  onClick={() => setShowSolutions(true)}
+                  className="bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 text-white px-5 py-2 rounded-md transition-colors duration-200 w-full sm:w-auto font-medium text-sm" /* Adjusted padding/size */
+                >
+                  Show Official Solutions
+                </button>
+              </div>
+            )}
+
+            {/* Official Solutions Card - Dark theme style */}
+            {showSolutions && (
+              <div className="bg-gray-800 rounded-lg border border-gray-700 shadow-md p-5 md:p-6 animate-fadeInUp"> {/* Adjusted padding/rounding */}
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-gray-100"> {/* Adjusted size */}
+                    Official Solutions
+                  </h2>
+                  {/* Hide Solutions Button - Dark theme style */}
+                  <button 
+                    onClick={() => setShowSolutions(false)}
+                    className="text-gray-400 hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-gray-700 focus:ring-1 focus:ring-gray-500" /* Adjusted padding */
+                    aria-label="Hide Solutions"
+                  >
+                    {/* Close Icon */}
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
+                </div>
+                
+                {/* Solution Tabs - Dark theme style */}
+                <div className="flex border-b border-gray-600 mb-4 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-700 pb-px">
+                  {question.solutions?.map((solution, index) => ( 
+                    <button
+                      key={index}
+                      onClick={() => handleTabChange(index)}
+                      className={`px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors duration-200 border-b-2 mr-1 ${ /* Adjusted padding */
+                        activeTab === index
+                          ? 'text-blue-400 border-blue-400'
+                          : 'text-gray-400 hover:text-gray-200 border-transparent hover:border-gray-500'
+                      }`}
+                    >
+                      {solution.title || `Solution ${index + 1}`}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Active Solution Content */}
+                {question.solutions?.[activeTab] && ( 
+                  <div className="space-y-4"> {/* Reduced space */}
+                    <div className="flex items-center justify-end">
+                      {/* Time Complexity Badge - Dark theme style */}
+                      <span className="px-2.5 py-0.5 rounded-full bg-blue-900/70 text-blue-300 text-xs font-medium border border-blue-700"> {/* Adjusted padding */}
+                        {question.solutions[activeTab].timeComplexity}
+                      </span>
+                    </div>
+
+                    {/* Solution Approach - Dark theme style */}
+                    {question.solutions[activeTab].approach && (
+                      <div className="prose prose-invert max-w-none prose-sm md:prose-base">
+                        <h4 className="text-base font-medium mb-2 text-gray-200">Approach</h4>
+                        <div className="bg-gray-700/50 rounded-md p-3 border border-gray-600 text-gray-300 text-sm"> {/* Adjusted padding/size */}
+                          {question.solutions[activeTab].approach}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Solution Code */}
+                    <div>
+                      <h4 className="text-base font-medium mb-2 text-gray-200">Implementation</h4>
+                      <div 
+                        className="relative group cursor-pointer rounded-md overflow-hidden border border-gray-600" 
+                        onClick={() => !revealedSolutions.has(activeTab) && handleRevealSolution(activeTab)}
+                      >
+                        {/* Blur Overlay - Dark theme style */}
+                        {!revealedSolutions.has(activeTab) && (
+                          <div className="absolute inset-0 bg-gray-800/60 backdrop-blur-sm z-10 flex flex-col items-center justify-center transition-opacity duration-300 group-hover:bg-gray-800/40"> {/* Adjusted overlay */}
+                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"> {/* Adjusted size */}
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span className="text-gray-300 font-medium text-xs">Click to reveal solution</span> {/* Adjusted size */}
+                          </div>
+                        )}
+
+                        {/* Code Editor Container - Dark theme */}
+                        <div className="h-[300px] md:h-[350px] shadow-md"> {/* Adjusted height */}
+                          <Editor
+                            height="100%"
+                            value={question.solutions[activeTab].code}
+                            language="python"
+                            theme="vs-dark" // Ensure dark theme
+                            options={{
+                              readOnly: true,
+                              minimap: { enabled: false },
+                              fontSize: 13, 
+                              padding: { top: 12, bottom: 12 }, // Adjusted padding
+                              scrollBeyondLastLine: false,
+                              wordWrap: "on", 
+                              automaticLayout: true, 
+                              roundedSelection: true,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
-            ))}
-          </div>
+            )}
+          </div> {/* End Right Column */}
+        </div> {/* End Main Content Grid */}
 
-          {/* Code editor */}
-          <div className="h-[500px] rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]">
-            <Editor
-              height="100%"
-              defaultValue={userSolutions[activeUserSolution].code}
-              language="python"
-              theme="vs-dark"
-              onChange={(value) => {
-                const newSolutions = [...userSolutions];
-                newSolutions[activeUserSolution].code = value;
-                setUserSolutions(newSolutions);
-              }}
-              options={{
-                fontSize: 14,
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                roundedSelection: false,
-                padding: { top: 16, bottom: 16 },
-                cursorBlinking: "smooth",
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Show Solutions Button - show when Solutions div is hidden */}
-        {!showSolutions && (
-          <div className="flex items-start justify-center">
-            <button 
-              onClick={() => setShowSolutions(true)}
-              className="glass-button bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:-translate-y-1"
-            >
-              Show Solutions
-            </button>
-          </div>
-        )}
-
-        {/* Solutions Section - show when showSolutions is true */}
-        {showSolutions && (
-          <div className="glass-container rounded-xl p-6 animate-fadeInUp">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Solutions
-              </h2>
-              <button 
-                onClick={() => setShowSolutions(false)}
-                className="text-gray-400 hover:text-gray-200 transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            {/* Solution Tabs */}
-            <div className="flex border-b border-gray-700/50 mb-6 overflow-x-auto">
-              {question.solutions.map((solution, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleTabChange(index)}
-                  className={`px-4 py-2 font-medium whitespace-nowrap transition-all duration-300 ${
-                    activeTab === index
-                      ? 'text-primary border-b-2 border-primary scale-105'
-                      : 'text-gray-400 hover:text-gray-300'
-                  }`}
-                >
-                  {solution.title || `Solution ${index + 1}`}
-                </button>
-              ))}
-            </div>
-
-            {/* Active Solution Content */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-end">
-                <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400">
-                  {question.solutions[activeTab].timeComplexity}
-                </span>
-              </div>
-
-              {/* Solution Approach */}
-              {question.solutions[activeTab].approach && (
-                <div className="prose prose-invert max-w-none">
-                  <h4 className="text-lg font-medium mb-2">Approach</h4>
-                  <div className="bg-gray-800/50 rounded-lg p-4">
-                    {question.solutions[activeTab].approach}
-                  </div>
-                </div>
-              )}
-
-              {/* Solution Code */}
-              <div>
-                <h4 className="text-lg font-medium mb-2">Implementation</h4>
-                <div 
-                  className="relative group cursor-pointer"
-                  onClick={() => !revealedSolutions.has(activeTab) && handleRevealSolution(activeTab)}
-                >
-                  {/* Blur Overlay */}
-                  {!revealedSolutions.has(activeTab) && (
-                    <div className="blur-overlay absolute inset-0 bg-gray-900/10 backdrop-blur-md z-10 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:backdrop-blur-sm">
-                      <span className="text-gray-300 font-medium">Click to reveal solution</span>
-                    </div>
-                  )}
-
-                  {/* Code Editor */}
-                  <div className="h-[400px] rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]">
-                    <Editor
-                      height="100%"
-                      value={question.solutions[activeTab].code}
-                      language="python"
-                      theme="vs-dark"
-                      options={{
-                        readOnly: true,
-                        minimap: { enabled: false },
-                        fontSize: 14,
-                        padding: { top: 16, bottom: 16 },
-                        scrollBeyondLastLine: false,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Add Revised button at the bottom */}
-      <div className="mt-8 flex justify-end">
-        <button
-          onClick={handleRevision}
-          disabled={isRevising}
-          className={`
-            glass-button bg-gradient-to-r from-emerald-500 to-green-500 
-            text-white px-8 py-3 rounded-xl transition-all duration-300 
-            hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] hover:-translate-y-1
-            disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-            flex items-center gap-2
-          `}
-        >
-          {isRevising ? (
-            <>
-              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-              <span>Updating...</span>
-            </>
-          ) : (
-            <>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Mark as Revised</span>
-            </>
-          )}
-        </button>
-      </div>
+        {/* Removed redundant Mark as Revised button at the bottom */}
+        
+      </div> {/* End max-w-7xl container */}
     </div>
   );
 }
