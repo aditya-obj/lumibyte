@@ -1,9 +1,9 @@
 'use client';
 import Editor from '@monaco-editor/react';
 import { marked } from 'marked';
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 
 import { auth, db } from '@/components/firebase.config';
 import { format, startOfDay } from 'date-fns';
@@ -208,14 +208,25 @@ export default function QuestionPage({ params }) {
     <div className="min-h-screen p-4 sm:p-6 md:p-8 bg-gray-900 text-gray-100">
       {/* Max-width container */}
       <div className="max-w-7xl mx-auto">
-        {/* Header section */}
-        <div className="flex flex-col sm:flex-row justify-between items-start mb-6"> {/* Reduced margin */}
+        {/* Header section with Back Button */}
+        <div className="flex items-center gap-4 mb-4"> {/* Reduced margin to mb-4 */}
+           <button 
+            onClick={() => router.back()}
+            className="text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700/50 cursor-pointer" /* Added cursor-pointer */
+            aria-label="Go back"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+          </button>
           {/* Title - Dark theme style */}
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-100 mb-3 sm:mb-0"> {/* Slightly smaller title */}
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-100"> {/* Slightly smaller title */}
             {question?.title}
           </h1>
+        </div>
 
-          {/* Mark as Revised Button - Dark theme style */}
+        {/* Mark as Revised Button - Moved below title/back button */}
+        <div className="flex justify-end mb-4"> {/* Reduced margin to mb-4 */}
           <button
             onClick={handleRevision}
             disabled={isRevising}

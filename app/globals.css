@@ -186,3 +186,16 @@ button:hover::after {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
 }
+
+/* Shaking animation for the wave emoji */
+@keyframes shake {
+  0%, 100% { transform: rotate(0deg); }
+  10%, 30%, 50%, 70%, 90% { transform: rotate(-10deg); }
+  20%, 40%, 60%, 80% { transform: rotate(10deg); }
+}
+
+.animate-shake {
+  display: inline-block; /* Needed for transform */
+  animation: shake 2s ease-in-out 1; /* Play once for 2 seconds */
+  transform-origin: 70% 70%; /* Adjust origin for a more natural wave */
+}
