@@ -3,6 +3,7 @@ import Editor from '@monaco-editor/react';
 import { marked } from 'marked';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 import { auth, db } from '@/components/firebase.config';
 import { format, startOfDay } from 'date-fns';
@@ -18,6 +19,42 @@ const createSlug = (text) => {
     .replace(/\s+/g, '-') // Replace spaces with hyphens
     .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
     .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+};
+
+// Add this function to parse and render content with images
+const renderContent = (content) => {
+  if (!content) return null;
+
+  // Split content by image URLs with improved regex
+  const parts = content.split(/(https:\/\/[^\s)]+\.(?:jpg|jpeg|png|gif))/gi);
+
+  return parts.map((part, index) => {
+    // Check if the part is an image URL with improved regex
+    if (part.match(/^https:\/\/[^\s)]+\.(?:jpg|jpeg|png|gif)$/i)) {
+      console.log("Found image URL:", part); // Debug log
+      return (
+        <div key={index} className="my-4"> {/* Removed 'flex justify-center' */}
+          <Image
+            src={part}
+            width={500}
+            height={300}
+            alt="Problem visualization"
+            className="rounded-lg"
+            priority={true}
+            unoptimized={true}
+          />
+        </div>
+      );
+    }
+    // Render regular text content using marked
+    return (
+      <div 
+        key={index} 
+        className="prose-content"
+        dangerouslySetInnerHTML={{ __html: marked(part) }} 
+      />
+    );
+  });
 };
 
 export default function QuestionPage({ params }) {
@@ -246,17 +283,17 @@ export default function QuestionPage({ params }) {
               <div className="prose prose-invert max-w-none prose-sm md:prose-base prose-pre:p-0 prose-pre:my-2 prose-pre:bg-transparent prose-pre:border-none prose-code:text-pink-400 prose-headings:text-gray-100 prose-headings:font-semibold prose-headings:mb-3 prose-headings:pb-2 prose-headings:border-b prose-headings:border-gray-600 prose-a:text-blue-400 hover:prose-a:text-blue-300">
                 <div> {/* Removed mb-6 */}
                   <h2 className="text-lg md:text-xl">Description</h2>
-                  <div className="text-gray-300" dangerouslySetInnerHTML={{ __html: marked(question?.description || '') }} />
+                  {renderContent(question?.description)}
                 </div>
 
                 <div> {/* Removed mb-6 */}
                   <h2 className="text-lg md:text-xl">Examples</h2>
-                  <div className="text-gray-300" dangerouslySetInnerHTML={{ __html: marked(question?.examples || '') }} />
+                  {renderContent(question?.examples)}
                 </div>
 
                 <div>
                   <h2 className="text-lg md:text-xl">Constraints</h2>
-                  <div className="text-gray-300" dangerouslySetInnerHTML={{ __html: marked(question?.constraints || '') }} />
+                  {renderContent(question?.constraints)}
                 </div>
               </div>
             </div>
