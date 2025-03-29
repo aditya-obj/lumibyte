@@ -17,14 +17,23 @@ export default function QuestionsPage() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        const topicsRef = ref(db, `users/${user.uid}/topics`);
-        get(topicsRef).then((snapshot) => {
-          if (snapshot.exists()) {
-            const topicsData = snapshot.val();
-            setTopics([...Object.values(topicsData), 'Others']);
-          } else {
-            setTopics(['Others']);
-          }
+        // Fetch both public and user-specific topics
+        const publicTopicsRef = ref(db, 'public/topics');
+        const userTopicsRef = ref(db, `users/${user.uid}/topics`);
+
+        Promise.all([
+          get(publicTopicsRef),
+          get(userTopicsRef)
+        ]).then(([publicSnapshot, userSnapshot]) => {
+          const publicTopics = publicSnapshot.exists() ? Object.values(publicSnapshot.val()) : [];
+          const userTopics = userSnapshot.exists() ? Object.values(userSnapshot.val()) : [];
+          
+          // Merge topics and remove duplicates
+          const allTopics = [...new Set([...publicTopics, ...userTopics, 'Others'])];
+          setTopics(allTopics);
+        }).catch(error => {
+          console.error("Error fetching topics:", error);
+          setTopics(['Others']);
         });
       } else {
         setTopics(['Others']);
