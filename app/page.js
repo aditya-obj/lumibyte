@@ -2,9 +2,10 @@
 import Login from '@/components/Login';
 import { auth, db } from '@/components/firebase.config';
 import { format } from 'date-fns';
-import { get, ref } from 'firebase/database';
+import { get, ref, set, push } from 'firebase/database';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [currentQuestion, setCurrentQuestion] = useState(null);
@@ -15,6 +16,9 @@ export default function Home() {
   const [showTopicDropdown, setShowTopicDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [showSuccessNotification, setShowSuccessNotification] = useState(false);
+  const [hasImported, setHasImported] = useState(false);
+  const router = useRouter();
 
   const handleAuthRequired = () => {
     setShowLogin(true);
@@ -154,6 +158,65 @@ export default function Home() {
     }
   };
 
+  const handleImportQuestions = async () => {
+    if (!user) {
+      handleAuthRequired();
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Get public questions
+      const publicQuestionsRef = ref(db, 'public/questions');
+      const publicSnapshot = await get(publicQuestionsRef);
+      
+      if (!publicSnapshot.exists()) {
+        alert('No public questions available to import');
+        setIsLoading(false);
+        return;
+      }
+
+      // Get user's existing questions to avoid duplicates
+      const userQuestionsRef = ref(db, `users/${user.uid}/questions`);
+      const userSnapshot = await get(userQuestionsRef);
+      const existingQuestions = userSnapshot.exists() ? Object.values(userSnapshot.val()) : [];
+      
+      // Import each public question that isn't already in user's questions
+      const publicQuestions = Object.values(publicSnapshot.val());
+      
+      for (const question of publicQuestions) {
+        // Check if question already exists (by title)
+        const isDuplicate = existingQuestions.some(
+          eq => eq.title === question.title
+        );
+
+        if (!isDuplicate) {
+          // Add question to user's questions
+          await push(userQuestionsRef, {
+            ...question,
+            importedAt: Date.now()
+          });
+        }
+      }
+
+      // Show success notification
+      setShowSuccessNotification(true);
+      setHasImported(true);
+
+      // Redirect to dashboard after a delay
+      setTimeout(() => {
+        setShowSuccessNotification(false);
+        router.push('/dashboard');
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error importing questions:', error);
+      alert('Failed to import questions. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen p-4 sm:p-6 md:p-8 transition-colors relative overflow-hidden bg-[#111827]">
       {/* Animated background elements - enhanced */}
@@ -228,17 +291,59 @@ export default function Home() {
           )}
           
           {user && (
-            <Link 
-              href="/dashboard"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:-translate-y-1 group"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              Dashboard
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link 
+                href="/dashboard"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:-translate-y-1 group"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Dashboard
+              </Link>
+
+              {/* Admin Questions - Only visible to admin */}
+              {user.uid === 'Vl8iVtOQo9PZrVNKH0zG65yCWv22' && (
+                <Link 
+                  href="/admin/questions"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] hover:-translate-y-1 group"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                  Admin Questions
+                </Link>
+              )}
+
+              {/* Only show Import button if not yet imported */}
+              {!hasImported && (
+                <button 
+                  onClick={handleImportQuestions}
+                  disabled={isLoading}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(34,197,94,0.5)] hover:-translate-y-1 group disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  {isLoading ? 'Importing...' : 'Import Questions'}
+                </button>
+              )}
+            </div>
           )}
         </div>
+
+        {/* Success Notification */}
+        {showSuccessNotification && (
+          <div className="success-notification">
+            <div className="success-content">
+              <svg className="success-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              <span className="success-message">Questions imported successfully!</span>
+            </div>
+          </div>
+        )}
 
         {/* Topic filtering section with improved UI */}
         <div className="relative z-20 space-y-4 bg-gray-800/30 backdrop-blur-sm p-4 rounded-xl border border-gray-700/50"> {/* Added relative z-20 */}
