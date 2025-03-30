@@ -6,11 +6,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'assets.leetcode.com',
         port: '',
-        pathname: '/**',
+        pathname: '/uploads/**', // More specific pathname
       },
-      // Add any other domains you need
     ],
-    domains: ['assets.leetcode.com'], // Add this as a fallback
+    domains: ['assets.leetcode.com'],
   },
 };
 

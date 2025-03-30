@@ -199,26 +199,126 @@ button:active {
   animation: fadeIn 0.3s ease-out forwards; /* Apply the animation */
 }
 
-/* Custom Scrollbar for specific elements */
-@layer utilities {
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(55, 65, 81, 0.1);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.5);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.7);
+}
+
+/* Firefox scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(107, 114, 128, 0.5) rgba(55, 65, 81, 0.1);
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Prevent rubber-band scrolling on iOS */
+.prevent-bounce {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Better tap targets for mobile */
+@media (max-width: 768px) {
+  button, 
+  select, 
+  input {
+    min-height: 44px;
+    min-width: 44px;
   }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(55, 65, 81, 0.5); /* gray-700 with opacity */
-    border-radius: 10px;
+}
+
+/* Question content styling */
+.question-container {
+  @apply relative z-10;
+}
+
+.question-content {
+  @apply text-gray-300 leading-relaxed;
+}
+
+.question-content h1,
+.question-content h2,
+.question-content h3,
+.question-content h4 {
+  @apply text-white font-semibold my-4;
+}
+
+.question-content p {
+  @apply my-3;
+}
+
+.question-content ul,
+.question-content ol {
+  @apply my-4 pl-6 space-y-2;
+}
+
+.question-content ul {
+  @apply list-disc;
+}
+
+.question-content ol {
+  @apply list-decimal;
+}
+
+.question-content li {
+  @apply text-gray-300;
+}
+
+.question-content pre {
+  @apply my-4 p-4 bg-[#282c34] rounded-lg overflow-x-auto border border-[#3e4451];
+}
+
+.question-content code {
+  @apply font-mono text-sm bg-[#282c34] px-1.5 py-0.5 rounded text-gray-300;
+}
+
+.question-content pre code {
+  @apply p-0 bg-transparent;
+}
+
+.question-content blockquote {
+  @apply my-4 pl-4 border-l-4 border-gray-600 italic text-gray-400;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .question-container {
+    @apply space-y-6;
   }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(107, 114, 128, 0.7); /* gray-500 with opacity */
-    border-radius: 10px;
+  
+  .question-content pre {
+    @apply text-sm;
   }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(156, 163, 175, 0.8); /* gray-400 with opacity */
-  }
-  /* Firefox scrollbar */
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(107, 114, 128, 0.7) rgba(55, 65, 81, 0.5);
+  
+  .question-content h1,
+  .question-content h2,
+  .question-content h3,
+  .question-content h4 {
+    @apply text-lg;
   }
 }

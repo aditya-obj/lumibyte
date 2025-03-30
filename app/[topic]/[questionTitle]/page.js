@@ -24,33 +24,37 @@ const createSlug = (text) => {
 // Add this function to parse and render content with images
 const renderContent = (content) => {
   if (!content) return null;
-
-  // Split content by image URLs with improved regex
-  const parts = content.split(/(https:\/\/[^\s)]+\.(?:jpg|jpeg|png|gif))/gi);
+  // Updated regex to match LeetCode image URLs more precisely
+  const parts = content.split(/(\bhttps:\/\/assets\.leetcode\.com\/uploads\/[^\s)]+\.(?:jpg|jpeg|png|gif))/i);
 
   return parts.map((part, index) => {
-    // Check if the part is an image URL with improved regex
-    if (part.match(/^https:\/\/[^\s)]+\.(?:jpg|jpeg|png|gif)$/i)) {
-      console.log("Found image URL:", part); // Debug log
+    // Updated condition to match LeetCode assets
+    if (part.match(/^https:\/\/assets\.leetcode\.com\/uploads\/[^\s)]+\.(?:jpg|jpeg|png|gif)/i)) {
       return (
-        <div key={index} className="my-4"> {/* Keep margin for images */}
+        <div key={index} className="my-6 flex justify-center">
           <Image
             src={part}
-            width={500} // Keep explicit width for initial render, CSS handles responsiveness
-            height={300} // Keep explicit height for initial render
             alt="Problem visualization"
-            className="rounded-lg max-w-full h-auto" // Make image responsive
+            width={500}
+            height={300}
+            className="rounded-xl shadow-lg max-w-full h-auto"
             priority={true}
-            unoptimized={true}
+            unoptimized={false} // Changed to false to enable optimization
           />
         </div>
       );
     }
-    // Render regular text content using marked - let prose handle styling
     return (
-      <span // Use span or fragment to avoid interfering with prose block elements
+      <div 
         key={index}
-        dangerouslySetInnerHTML={{ __html: marked(part) }}
+        className="question-content"
+        dangerouslySetInnerHTML={{ 
+          __html: marked(part, {
+            highlight: (code, lang) => {
+              return Prism.highlight(code, Prism.languages[lang || 'text'], lang || 'text');
+            }
+          })
+        }}
       />
     );
   });
@@ -58,7 +62,10 @@ const renderContent = (content) => {
 
 export default function QuestionPage({ params }) {
   const unwrappedParams = React.use(params);
-  // State for the left column tabs (Question + Official Solutions)
+  // Add this line with other state declarations
+  const [mobileView, setMobileView] = useState('description'); // 'description' or 'editor'
+  
+  // Existing state declarations
   const [activeLeftTab, setActiveLeftTab] = useState(0); // 0 for Question, 1+ for solutions
   const [question, setQuestion] = useState(null);
   const [userSolutions, setUserSolutions] = useState([{ code: '', timeComplexity: '' }]);
@@ -229,342 +236,317 @@ export default function QuestionPage({ params }) {
   };
 
   return (
-    // Reduce horizontal padding, keep vertical padding
-    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-2 sm:px-3 md:px-4 bg-[#1a1a1a] text-gray-300">
-      {/* Removed max-width container */}
-      <div className="mx-auto"> {/* Removed max-w-7xl */}
-        {/* Header section with Back Button */}
-        <div className="flex items-center gap-3 mb-4">
-           <button
-            onClick={handleBackClick}
-            className="text-gray-400 hover:text-white transition-colors p-1.5 rounded-md hover:bg-gray-700/50 cursor-pointer" /* Adjusted padding/rounding */
-            aria-label="Go back"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}> {/* Adjusted size */}
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </button>
-          {/* Title - LeetCode-like style */}
-          <h1 className="text-xl md:text-2xl font-medium text-gray-100"> {/* Adjusted size/weight */}
-            {question?.title}
-          </h1>
-        </div>
-
-        {/* Mark as Revised Button and Edit Button Container */}
-        <div className="flex justify-end gap-2 mb-4"> {/* Added gap-2 for spacing between buttons */}
-          {/* Edit Button */}
-          <button
-            onClick={() => router.push(`/edit/question?id=${question.id}`)}
-            className={`
-              bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#1a1a1a]
-              text-white px-3 py-1 rounded-md transition-colors duration-200 cursor-pointer
-              flex items-center gap-1 text-xs font-medium shrink-0
-            `}
-          >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-3.5 w-3.5" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor" 
-              strokeWidth={2}
+    <div className="min-h-screen bg-[#0a0a0a]">
+      {/* Top Navigation Bar */}
+      <nav className="bg-[#1a1a1a] border-b border-[#2a2a2a] sticky top-0 z-50">
+        <div className="max-w-[1920px] mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <button
+              onClick={() => router.push(previousPath)}
+              className="p-1.5 sm:p-2 hover:bg-[#2a2a2a] rounded-lg transition-colors flex-shrink-0 cursor-pointer"
             >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" 
-              />
-            </svg>
-            <span>Edit</span>
-          </button>
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h1 className="text-gray-200 font-medium truncate text-sm sm:text-base">{question?.title}</h1>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {/* Mobile View/Edit Toggle */}
+            <div className="lg:hidden">
+              <button 
+                onClick={() => setMobileView(prev => prev === 'description' ? 'editor' : 'description')}
+                className="px-3 py-1.5 bg-gray-800 text-gray-300 rounded-lg text-sm font-medium cursor-pointer"
+              >
+                {mobileView === 'description' ? 'Editor' : 'Problem'}
+              </button>
+            </div>
 
-          {/* Existing Mark as Revised Button */}
-          <button
-            onClick={handleRevision}
-            disabled={isRevising}
-            className={`
-              bg-emerald-600 hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-[#1a1a1a]
-              text-white px-3 py-1 rounded-md transition-colors duration-200 cursor-pointer
-              disabled:opacity-60 disabled:cursor-not-allowed
-              flex items-center gap-1 text-xs font-medium shrink-0
-            `}
-          >
-          {isRevising ? (
-            <>
-              {/* Spinner Icon */}
-              <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24"> {/* Adjusted size */}
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            <button 
+              onClick={handleRevision}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer
+                ${question?.lastRevised 
+                  ? 'bg-purple-500/10 text-purple-400' 
+                  : 'bg-green-500/10 text-green-400'}`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>Updating...</span>
-            </>
-          ) : question?.lastRevised ? (
-             <>
-              {/* Undo Icon */}
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.334 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
-              </svg>
-              <span>Mark as Unrevised</span>
-            </>
-          ) : (
-            <>
-              {/* Checkmark Icon */}
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"> {/* Adjusted size */}
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Mark as Revised</span>
-            </>
-          )}
-          </button>
+              <span className="hidden sm:inline">{question?.lastRevised ? 'Revised' : 'Mark as Revised'}</span>
+            </button>
+          </div>
         </div>
+      </nav>
 
-        {/* Badges - LeetCode-like style */}
-        <div className="flex gap-2 gap-y-1 mb-6 items-center flex-wrap"> {/* Reduced margin, Added gap-y-1 */}
-          {/* Topic Badge */}
-          <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-blue-900/70 text-blue-300"> {/* Adjusted padding/rounding/color */}
-            {question?.topic}
-          </span>
-          {/* Difficulty Badge */}
-          <span className={`
-            px-2.5 py-1 rounded-md text-xs font-medium /* Adjusted padding/rounding */
-            ${question?.difficulty.toLowerCase() === 'easy'
-              ? 'bg-emerald-900/60 text-emerald-300' // LeetCode green
-              : question?.difficulty.toLowerCase() === 'medium'
-              ? 'bg-yellow-700/50 text-yellow-300' // LeetCode yellow
-              : 'bg-red-800/50 text-red-300'} /* LeetCode red */
-          `}>
+      {/* Problem Info Bar - Sticky on mobile */}
+      <div className="sticky top-14 sm:top-16 z-40 bg-[#0a0a0a] py-2 lg:py-4 px-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className={`px-2 py-1 rounded-md text-xs font-medium
+            ${question?.difficulty?.toLowerCase() === 'easy'
+              ? 'bg-green-500/10 text-green-500'
+              : question?.difficulty?.toLowerCase() === 'medium'
+              ? 'bg-yellow-500/10 text-yellow-500'
+              : 'bg-red-500/10 text-red-500'}`}>
             {question?.difficulty}
-          </span>
-          {/* Last Revised Badge */}
+          </div>
+          <div className="px-2 py-1 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400">
+            {question?.topic}
+          </div>
           {question?.lastRevised && (
-            <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-sky-900/60 text-sky-300"> {/* Adjusted padding/rounding */}
-              Revised: {formatDate(question.lastRevised)}
-            </span>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-purple-500/10 text-purple-400">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{formatDate(question.lastRevised)}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-[1920px] mx-auto">
+        {/* Mobile Layout */}
+        <div className="lg:hidden h-[calc(100vh-8rem)]">
+          {mobileView === 'description' ? (
+            <MobileDescription 
+              question={question}
+              activeLeftTab={activeLeftTab}
+              handleLeftTabChange={handleLeftTabChange}
+              renderContent={renderContent}
+            />
+          ) : (
+            <MobileEditor
+              userSolutions={userSolutions}
+              activeUserSolution={activeUserSolution}
+            />
           )}
         </div>
 
-        {/* Main Content Grid - Two Columns on Large Screens */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:items-start"> {/* Increased gap & Added lg:items-start */}
-
-          {/* Left Column: Question + Official Solutions Tabs */}
-          <div className="min-w-0"> {/* Added min-w-0 to prevent overflow */}
-            {/* Tab Bar */}
-            <div className="flex border-b border-gray-700/80 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-700/50 pb-px mb-4"> {/* Added mb-4 */}
-              {/* Question Tab */}
+        {/* Desktop Layout */}
+        <div className="hidden lg:grid lg:grid-cols-2 gap-4 p-4">
+          {/* Left Column - Problem Description */}
+          <div className="h-[calc(100vh-10rem)] flex flex-col bg-[#1a1a1a] rounded-xl overflow-hidden">
+            <div className="border-b border-[#2a2a2a] flex overflow-x-auto custom-scrollbar">
               <button
                 onClick={() => handleLeftTabChange(0)}
-                className={`px-2 md:px-3 py-1.5 text-[11px] md:text-xs font-medium whitespace-nowrap transition-colors duration-200 border-b-2 mr-0.5 -mb-px cursor-pointer ${ /* Adjusted padding & font size, Added cursor-pointer */
-                  activeLeftTab === 0
-                    ? 'text-gray-100 border-gray-100'
-                    : 'text-gray-400 hover:text-gray-200 border-transparent hover:border-gray-500'
-                }`}
+                className={`px-4 sm:px-6 py-3 text-sm font-medium transition-colors relative whitespace-nowrap
+                  ${activeLeftTab === 0 ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
               >
-                Question
+                Description
+                {activeLeftTab === 0 && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                )}
               </button>
-              {/* Official Solution Tabs */}
               {question?.solutions?.map((solution, index) => (
                 <button
-                  key={index + 1} // Ensure unique key
+                  key={index + 1}
                   onClick={() => handleLeftTabChange(index + 1)}
-                  className={`px-2 md:px-3 py-1.5 text-[11px] md:text-xs font-medium whitespace-nowrap transition-colors duration-200 border-b-2 mr-0.5 -mb-px cursor-pointer ${ /* Adjusted padding & font size, Added cursor-pointer */
-                    activeLeftTab === index + 1
-                      ? 'text-gray-100 border-gray-100'
-                      : 'text-gray-400 hover:text-gray-200 border-transparent hover:border-gray-500'
-                  }`}
+                  className={`px-4 sm:px-6 py-3 text-sm font-medium transition-colors relative whitespace-nowrap
+                    ${activeLeftTab === index + 1 ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
                 >
                   {solution.title || `Solution ${index + 1}`}
+                  {activeLeftTab === index + 1 && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                  )}
                 </button>
               ))}
             </div>
 
-            {/* Tab Content */}
-            <div className="bg-[#282828] rounded-lg border border-gray-700/50 shadow-sm p-5 md:p-6 overflow-hidden"> {/* Added overflow-hidden */}
-              {/* Conditional Rendering based on activeLeftTab */}
-              {activeLeftTab === 0 && (
-                /* Question Content */
-                /* Adjusted prose classes for LeetCode-like styling */
-                <div className="prose prose-invert prose-sm md:prose-base max-w-none text-gray-300 prose-p:my-3 prose-li:my-1 prose-headings:text-gray-100 prose-headings:font-medium prose-headings:mb-3 prose-headings:pb-1 prose-headings:border-b prose-headings:border-gray-700/50 prose-code:text-gray-200 prose-code:bg-gray-700/40 prose-code:px-1 prose-code:py-0.5 prose-code:rounded-sm prose-code:font-normal prose-code:before:content-none prose-code:after:content-none prose-pre:p-3 prose-pre:my-3 prose-pre:bg-[#1e1e1e] prose-pre:rounded-md prose-pre:border prose-pre:border-gray-700/50 prose-pre:overflow-x-auto prose-a:text-blue-400 hover:prose-a:text-blue-300">
-                  <div className="mb-6"> {/* Increased margin */}
-                    <h2 className="text-base md:text-lg">Description</h2>
-                    {renderContent(question?.description)}
-                  </div>
-                  <div className="mb-6"> {/* Increased margin */}
-                    <h2 className="text-base md:text-lg">Examples</h2>
-                    {renderContent(question?.examples)}
-                  </div>
-                  <div> {/* No margin needed below the last item */}
-                    <h2 className="text-base md:text-lg">Constraints</h2>
-                    {renderContent(question?.constraints)}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6">
+              {activeLeftTab === 0 ? (
+                <div className="prose prose-invert max-w-none">
+                  <div className="space-y-8 question-container">
+                    <div className="bg-[#1f2937] rounded-xl p-6 shadow-lg border border-[#374151]">
+                      <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                        <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg text-sm">
+                          Problem Description
+                        </span>
+                      </h3>
+                      {renderContent(question?.description)}
+                    </div>
+                    
+                    <div className="bg-[#1f2937] rounded-xl p-6 shadow-lg border border-[#374151]">
+                      <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                        <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-lg text-sm">
+                          Examples
+                        </span>
+                      </h3>
+                      {renderContent(question?.examples)}
+                    </div>
+
+                    <div className="bg-[#1f2937] rounded-xl p-6 shadow-lg border border-[#374151]">
+                      <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                        <span className="bg-purple-500/20 text-purple-400 px-3 py-1 rounded-lg text-sm">
+                          Constraints
+                        </span>
+                      </h3>
+                      {renderContent(question?.constraints)}
+                    </div>
                   </div>
                 </div>
-              )}
-
-              {activeLeftTab > 0 && question?.solutions?.[activeLeftTab - 1] && (
-                /* Official Solution Content */
-                (() => {
-                  const solutionIndex = activeLeftTab - 1;
-                  const solution = question.solutions[solutionIndex];
-                  const isRevealed = revealedSolutions.has(solutionIndex);
-
-                  return (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                         <h3 className="text-lg font-medium text-gray-100">{solution.title || `Solution ${solutionIndex + 1}`}</h3>
-                         <span className="px-2 py-0.5 rounded bg-sky-900/70 text-sky-300 text-xs font-medium">
-                           {solution.timeComplexity}
-                         </span>
+              ) : (
+                <div className="prose prose-invert max-w-none">
+                  {question?.solutions?.[activeLeftTab - 1] && (
+                    <>
+                      <div className="mb-6">
+                        <h4 className="text-base sm:text-lg font-medium text-white mb-3">Explanation</h4>
+                        {renderContent(question.solutions[activeLeftTab - 1].explanation)}
                       </div>
-
-                      {solution.approach && (
-                        <div className="prose prose-invert max-w-none prose-sm md:prose-base text-gray-300">
-                          <h4 className="text-sm font-medium mb-1.5 text-gray-200">Approach</h4>
-                          <div className="bg-[#1e1e1e] rounded-md p-3 border border-gray-700/50 text-gray-300 text-xs">
-                            {solution.approach}
-                          </div>
-                        </div>
-                      )}
-
                       <div>
-                        <h4 className="text-sm font-medium mb-1.5 text-gray-200">Implementation</h4>
-                        <div
-                          className="relative group cursor-pointer rounded-md overflow-hidden border border-gray-700/50"
-                          onClick={() => !isRevealed && handleRevealSolution(solutionIndex)}
-                        >
-                          {!isRevealed && (
-                            <div className="absolute inset-0 bg-[#282828]/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center transition-opacity duration-300 group-hover:bg-[#282828]/50">
-                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                              <span className="text-gray-300 font-medium text-xs">Click to reveal solution</span>
-                            </div>
-                          )}
-                          <div className="h-[300px] md:h-[350px] shadow-sm">
-                            <Editor
-                              height="100%"
-                              value={solution.code}
-                              language="python"
-                              theme="vs-dark"
-                              options={{
-                                readOnly: true,
-                                minimap: { enabled: false },
-                                fontSize: 13,
-                                padding: { top: 10, bottom: 10 },
-                                scrollBeyondLastLine: false,
-                                wordWrap: "on",
-                                automaticLayout: true,
-                                roundedSelection: true,
-                              }}
-                            />
-                          </div>
-                        </div>
+                        <h4 className="text-base sm:text-lg font-medium text-white mb-3">Solution</h4>
+                        <pre className="bg-[#282c34] p-4 rounded-lg overflow-x-auto">
+                          <code className="text-sm text-gray-300">{question.solutions[activeLeftTab - 1].code}</code>
+                        </pre>
                       </div>
-                    </div>
-                  );
-                })() // Immediately invoke the function to render the content
+                    </>
+                  )}
+                </div>
               )}
-            </div> {/* <-- Added missing closing div here */}
+            </div>
           </div>
 
-          {/* Right Column: User Solutions */}
-          <div> {/* Removed lg:mt-10 */}
-            {/* Placeholder div to match tab bar height + margin on large screens */}
-            <div className="h-8 mb-4 hidden lg:block"></div> {/* Changed h-11 to h-8 */}
-            {/* Your Solutions Card - LeetCode-like style */}
-            <div className="bg-[#282828] rounded-lg border border-gray-700/50 shadow-sm p-5 md:p-6"> {/* Increased padding */}
-              {/* Content inside this card remains the same */}
-              <div className="flex justify-between items-center mb-4"> {/* Increased margin */}
-                <h2 className="text-lg font-medium text-gray-100">
-                  Your Solutions
-                </h2>
-                {/* Add Solution Button is kept */}
-              </div>
-
-              {/* User Solution Tabs - LeetCode-like style */}
-              <div className="flex items-center border-b border-gray-700/80 mb-3 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-700/50 pb-px">
-                {userSolutions.map((_, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center relative group mr-0.5" // Reduced margin
-                  >
-                    {/* Tab Button */}
-                    <button
-                      onClick={() => setActiveUserSolution(index)}
-                      className={`px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors duration-200 border-b-2 -mb-px ${ /* Adjusted padding/size */
-                        activeUserSolution === index
-                          ? 'text-gray-100 border-gray-100' // LeetCode active tab
-                          : 'text-gray-400 hover:text-gray-200 border-transparent hover:border-gray-500'
-                      }`}
-                    >
-                      Solution {index + 1}
-                    </button>
-                    {/* Remove Button */}
-                    {userSolutions.length > 1 && (
-                      <button
-                        onClick={() => {
-                          const newSolutions = userSolutions.filter((_, i) => i !== index);
-                          setUserSolutions(newSolutions);
-                          // Adjust active tab if the removed one was active or last
-                          if (activeUserSolution === index) {
-                            setActiveUserSolution(Math.max(0, index - 1));
-                          } else if (activeUserSolution > index) {
-                             setActiveUserSolution(activeUserSolution - 1);
-                          } else if (activeUserSolution >= newSolutions.length) {
-                             setActiveUserSolution(Math.max(0, newSolutions.length - 1));
-                          }
-                        }}
-                        className="ml-0.5 p-0.5 opacity-0 group-hover:opacity-60 hover:!opacity-100 text-red-500 hover:text-red-400 hover:bg-gray-700/50 rounded-full transition-all duration-150 text-xs leading-none focus:opacity-100 focus:ring-1 focus:ring-red-500" /* Adjusted size/padding/opacity */
-                        aria-label={`Remove Solution ${index + 1}`}
-                      >
-                        &times;
-                      </button>
-                    )}
-                  </div>
-                ))}
-                 {/* Add Solution Button - Moved here */}
-                 <button
-                  onClick={() => setUserSolutions([...userSolutions, { code: question?.empty_code || '', timeComplexity: '' }])}
-                  className="ml-2 mb-px bg-gray-600 hover:bg-gray-500 text-gray-300 w-5 h-5 rounded transition-colors duration-200 flex items-center justify-center text-sm font-light focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 focus:ring-offset-[#282828]" /* Adjusted size/style/position */
-                  aria-label="Add new solution"
-                >
-                  +
-                </button>
-              </div>
-
-              {/* Code Editor Container - LeetCode-like style */}
-              <div className="h-[400px] md:h-[450px] rounded-md overflow-hidden border border-gray-700/50 shadow-sm"> {/* Restored height */}
-                <Editor
-                  height="100%"
-                  value={userSolutions[activeUserSolution]?.code || ''}
-                  language="python"
-                  theme="vs-dark" // Keep vs-dark theme
-                  onChange={(value = '') => {
-                    const newSolutions = [...userSolutions];
-                    if (newSolutions[activeUserSolution]) {
-                      newSolutions[activeUserSolution].code = value;
-                      setUserSolutions(newSolutions);
-                    } else {
-                      console.warn("Attempted to update code for non-existent solution index:", activeUserSolution);
-                    }
-                  }}
-                  options={{
-                    fontSize: 13, // Slightly smaller font
-                    minimap: { enabled: false },
-                    scrollBeyondLastLine: false,
-                    roundedSelection: true,
-                    padding: { top: 10, bottom: 10 }, // Adjusted padding
-                    cursorBlinking: "smooth",
-                    wordWrap: "on",
-                    automaticLayout: true,
-                  }}
-                />
-              </div>
+          {/* Right Column - Code Editor */}
+          <div className="h-[calc(100vh-10rem)] bg-[#1a1a1a] rounded-xl overflow-hidden flex flex-col">
+            <div className="border-b border-[#2a2a2a] px-4 sm:px-6 py-3 flex items-center justify-between">
+              <h2 className="text-white font-medium text-sm sm:text-base">Your Solution</h2>
+              <button className="px-3 sm:px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-md transition-colors cursor-pointer">
+                Submit
+              </button>
             </div>
-            {/* Official Solutions section completely removed from the right column */}
-          </div> {/* End Right Column */}
-        </div> {/* End Main Content Grid */}
+            <div className="flex-1">
+              <Editor
+                height="100%"
+                value={userSolutions[activeUserSolution]?.code || ''}
+                language="python"
+                theme="vs-dark"
+                options={{
+                  fontSize: 14,
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                  padding: { top: 16, bottom: 16 },
+                  lineNumbers: 'on',
+                  roundedSelection: false,
+                  cursorStyle: 'line',
+                  automaticLayout: true,
+                  wordWrap: 'on',
+                  formatOnType: true,
+                  formatOnPaste: true,
+                  renderLineHighlight: 'all',
+                  scrollbar: {
+                    vertical: 'visible',
+                    horizontal: 'visible',
+                    verticalScrollbarSize: 12,
+                    horizontalScrollbarSize: 12,
+                  },
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
 
-      </div> {/* End max-w-7xl container */}
+      {/* Mobile Bottom Action Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#1a1a1a] border-t border-[#2a2a2a] px-4 py-3">
+        <div className="flex justify-end items-center">
+          <button className="px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg cursor-pointer">
+            Submit
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
+
+// Mobile Components
+const MobileDescription = ({ question, activeLeftTab, handleLeftTabChange, renderContent }) => (
+  <div className="h-full flex flex-col bg-[#1a1a1a] overflow-hidden">
+    <div className="border-b border-[#2a2a2a] flex overflow-x-auto hide-scrollbar">
+      <button
+        onClick={() => handleLeftTabChange(0)}
+        className={`px-4 py-3 text-sm font-medium transition-colors relative whitespace-nowrap
+          ${activeLeftTab === 0 ? 'text-white' : 'text-gray-400'}`}
+      >
+        Description
+        {activeLeftTab === 0 && (
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+        )}
+      </button>
+      {question?.solutions?.map((solution, index) => (
+        <button
+          key={index + 1}
+          onClick={() => handleLeftTabChange(index + 1)}
+          className={`px-4 py-3 text-sm font-medium transition-colors relative whitespace-nowrap
+            ${activeLeftTab === index + 1 ? 'text-white' : 'text-gray-400'}`}
+        >
+          {solution.title || `Solution ${index + 1}`}
+          {activeLeftTab === index + 1 && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+          )}
+        </button>
+      ))}
+    </div>
+
+    <div className="flex-1 overflow-y-auto p-4 pb-16">
+      {activeLeftTab === 0 ? (
+        <div className="prose prose-invert max-w-none">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-base font-medium text-white mb-3">Problem Description</h3>
+              {renderContent(question?.description)}
+            </div>
+            
+            <div>
+              <h3 className="text-base font-medium text-white mb-3">Examples</h3>
+              {renderContent(question?.examples)}
+            </div>
+
+            <div className="mb-12">
+              <h3 className="text-base font-medium text-white mb-3">Constraints</h3>
+              {renderContent(question?.constraints)}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="prose prose-invert max-w-none">
+          {question?.solutions?.[activeLeftTab - 1] && (
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-base font-medium text-white mb-2">Explanation</h4>
+                {renderContent(question.solutions[activeLeftTab - 1].explanation)}
+              </div>
+              <div>
+                <h4 className="text-base font-medium text-white mb-2">Solution</h4>
+                <pre className="bg-[#282c34] p-4 rounded-lg overflow-x-auto">
+                  <code className="text-sm text-gray-300">{question.solutions[activeLeftTab - 1].code}</code>
+                </pre>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  </div>
+);  // End with semicolon
+
+const MobileEditor = ({ userSolutions, activeUserSolution }) => (
+  <div className="h-full bg-[#1a1a1a] flex flex-col">
+    <div className="flex-1">
+      <Editor
+        height="100%"
+        value={userSolutions[activeUserSolution]?.code || ''}
+        language="python"
+        theme="vs-dark"
+        options={{
+          fontSize: 14,
+          minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+          padding: { top: 16, bottom: 16 },
+          lineNumbers: 'on',
+          wordWrap: 'on',
+          automaticLayout: true,
+        }}
+      />
+    </div>
+  </div>
+);  
