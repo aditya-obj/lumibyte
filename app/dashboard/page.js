@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 
 export default function Dashboard() {
+  const [showScrollButton, setShowScrollButton] = useState(false); // State for scroll button visibility
   const [view, setView] = useState('all'); // 'all' or 'revised'
   const [selectedTopic, setSelectedTopic] = useState('all'); // State for topic filter
   const [questions, setQuestions] = useState([]);
@@ -24,6 +25,30 @@ export default function Dashboard() {
       router.replace('/update-profile'); 
     }
   }, [user, authLoading, router]);
+
+  // Effect to handle scroll event listener for the button
+  useEffect(() => {
+    const checkScrollTop = () => {
+      // Show button if scrolled down more than 150px
+      if (!showScrollButton && window.pageYOffset > 150) {
+        setShowScrollButton(true);
+      // Hide button if scrolled back up to 150px or less
+      } else if (showScrollButton && window.pageYOffset <= 150) {
+        setShowScrollButton(false);
+      }
+    };
+
+    window.addEventListener('scroll', checkScrollTop);
+    return () => window.removeEventListener('scroll', checkScrollTop); // Cleanup listener
+  }, [showScrollButton]);
+
+  // Function to scroll smoothly to the top
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
 
   const createSlug = (text) => {
     return text
@@ -345,6 +370,19 @@ export default function Dashboard() {
           </div> // Closing div for the map result
         )} {/* Closing brace for the main conditional block */}
       </div> {/* Closing wrapper div for conditional rendering */}
+
+      {/* Scroll to Top Button */}
+      {showScrollButton && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 !right-6 p-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-300 ease-in-out z-50 animate-fade-in cursor-pointer transform hover:scale-105 hover:shadow-xl" /* Added cursor-pointer and hover effects */
+          aria-label="Scroll to top"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }
