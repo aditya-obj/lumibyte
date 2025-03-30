@@ -2,10 +2,10 @@
 import Login from '@/components/Login';
 import { auth, db } from '@/components/firebase.config';
 import { format } from 'date-fns';
-import { get, ref, set, push } from 'firebase/database';
+import { get, push, ref, set } from 'firebase/database';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
   const [currentQuestion, setCurrentQuestion] = useState(null);
@@ -67,6 +67,15 @@ export default function Home() {
 
           setNeedsSolutions(needsSolutionsFlag);
           setQuestions(questionsData);
+
+          // Extract unique topics from the fetched questions and update state
+          const uniqueTopicsFromQuestions = [...new Set(questionsData.map(q => q.topic || 'Uncategorized'))].sort();
+          setTopics(uniqueTopicsFromQuestions); // Update the topics state here
+
+        } else {
+          // Handle case where user has no questions
+          setQuestions([]);
+          setTopics([]); // Clear topics if no questions exist
         }
         setIsLoading(false);
       }).catch((error) => {

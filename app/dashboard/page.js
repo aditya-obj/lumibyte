@@ -10,6 +10,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 
 export default function Dashboard() {
   const [view, setView] = useState('all'); // 'all' or 'revised'
+  const [selectedTopic, setSelectedTopic] = useState('all'); // State for topic filter
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true); // For question data loading
   const [user, authLoading, authError] = useAuthState(auth); // Get auth loading state
@@ -77,17 +78,29 @@ export default function Dashboard() {
     }
   }, [user]);
 
+  // Extract unique topics for the filter dropdown
+  const uniqueTopics = useMemo(() => {
+    const topics = new Set(questions.map(q => q.topic || 'Uncategorized'));
+    return ['all', ...Array.from(topics).sort()]; // Add 'all' option and sort
+  }, [questions]);
+
   const groupedQuestions = useMemo(() => {
+    // Filter questions based on selected topic first
+    const filteredQuestions = questions.filter(question =>
+      selectedTopic === 'all' || (question.topic || 'Uncategorized') === selectedTopic
+    );
+
     if (view === 'revised') {
+      // Apply revised filter *after* topic filter
       return {
-        'Recently Revised': [...questions]
+        'Recently Revised': filteredQuestions
           .filter(q => q.lastRevised)
           .sort((a, b) => b.lastRevised - a.lastRevised)
       };
     }
-    
-    // Group questions by topic
-    return questions.reduce((acc, question) => {
+
+    // Group the filtered questions by topic
+    return filteredQuestions.reduce((acc, question) => {
       const topic = question.topic || 'Uncategorized';
       if (!acc[topic]) {
         acc[topic] = [];
@@ -95,15 +108,16 @@ export default function Dashboard() {
       acc[topic].push(question);
       return acc;
     }, {});
-  }, [questions, view]);
+  }, [questions, view, selectedTopic]); // Add selectedTopic to dependencies
 
-  // Calculate stats
+  // Calculate stats based on the original full list of questions, not filtered ones
   const stats = useMemo(() => {
     const total = questions.length;
+    const revised = questions.filter(q => q.lastRevised).length; // Count only revised questions
     const easy = questions.filter(q => q.difficulty.toLowerCase() === 'easy').length;
     const medium = questions.filter(q => q.difficulty.toLowerCase() === 'medium').length;
     const hard = questions.filter(q => q.difficulty.toLowerCase() === 'hard').length;
-    return { total, easy, medium, hard };
+    return { total, revised, easy, medium, hard }; // Include revised count
   }, [questions]);
 
   // Show loading spinner while auth state is resolving or if user needs redirect
@@ -162,9 +176,16 @@ export default function Dashboard() {
 
       {/* Stats Summary - Only show if not loading and there are questions */}
       {!loading && questions.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+        // Adjusted grid columns to accommodate 5 items
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-6">
+          {/* New Total Questions Box */}
           <div className="bg-gray-800/40 p-4 rounded-lg border border-gray-700 text-center">
-            <div className="text-3xl font-bold text-blue-400">{stats.total}</div>
+            <div className="text-3xl font-bold text-purple-400">{stats.total}</div>
+            <div className="text-sm text-gray-400 mt-1">Total Questions</div>
+          </div>
+          {/* Corrected Total Revised Box */}
+          <div className="bg-gray-800/40 p-4 rounded-lg border border-gray-700 text-center">
+            <div className="text-3xl font-bold text-blue-400">{stats.revised}</div>
             <div className="text-sm text-gray-400 mt-1">Total Revised</div>
           </div>
           <div className="bg-green-900/20 p-4 rounded-lg border border-green-700/50 text-center">
@@ -190,9 +211,33 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Topic Filter Dropdown - Only show if not loading and there are questions */}
+      {!loading && questions.length > 0 && view === 'all' && ( // Only show filter when 'all' view is active
+        <div className="flex justify-start mb-6"> {/* Align left and add margin-bottom */}
+          <div className="w-full max-w-xs"> {/* Keep max-width for reasonable size */}
+            <label htmlFor="topic-filter" className="block text-sm font-medium text-gray-400 mb-1"> {/* Removed text-center */}
+              Filter by Topic
+            </label>
+            <select
+              id="topic-filter"
+              name="topic-filter"
+              value={selectedTopic}
+              onChange={(e) => setSelectedTopic(e.target.value)}
+              className="block w-full pl-3 pr-10 py-2 text-base border border-gray-700 bg-gray-800/50 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm rounded-md shadow-sm appearance-none transition-colors duration-200 cursor-pointer" // Added cursor-pointer
+            >
+              {uniqueTopics.map((topic) => (
+                <option key={topic} value={topic} className="bg-gray-700 text-white"> {/* Added background for options */}
+                  {topic === 'all' ? 'All Topics' : topic}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
       {/* View Switch - Only show if not loading and there are questions */}
       {!loading && questions.length > 0 && (
-        <div className="flex justify-center"> 
+        <div className="flex justify-center">
           <div className="inline-flex bg-gray-900/60 border border-gray-700 p-1 rounded-lg shadow-sm">
             <button
               onClick={() => setView('all')}

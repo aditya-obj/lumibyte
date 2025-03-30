@@ -46,11 +46,10 @@ const renderContent = (content) => {
         </div>
       );
     }
-    // Render regular text content using marked
+    // Render regular text content using marked - let prose handle styling
     return (
-      <div
+      <span // Use span or fragment to avoid interfering with prose block elements
         key={index}
-        className="prose-content" // Keep this class if needed elsewhere, prose styles handle the rest
         dangerouslySetInnerHTML={{ __html: marked(part) }}
       />
     );
@@ -348,7 +347,7 @@ export default function QuestionPage({ params }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:items-start"> {/* Increased gap & Added lg:items-start */}
 
           {/* Left Column: Question + Official Solutions Tabs */}
-          <div> {/* Removed space-y-4 */}
+          <div className="min-w-0"> {/* Added min-w-0 to prevent overflow */}
             {/* Tab Bar */}
             <div className="flex border-b border-gray-700/80 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-700/50 pb-px mb-4"> {/* Added mb-4 */}
               {/* Question Tab */}
@@ -379,20 +378,20 @@ export default function QuestionPage({ params }) {
             </div>
 
             {/* Tab Content */}
-            <div className="bg-[#282828] rounded-lg border border-gray-700/50 shadow-sm p-5 md:p-6">
+            <div className="bg-[#282828] rounded-lg border border-gray-700/50 shadow-sm p-5 md:p-6 overflow-hidden"> {/* Added overflow-hidden */}
               {/* Conditional Rendering based on activeLeftTab */}
               {activeLeftTab === 0 && (
                 /* Question Content */
-                <div className="prose prose-invert max-w-none prose-sm md:prose-base text-gray-300 prose-pre:p-3 prose-pre:my-3 prose-pre:bg-[#1e1e1e] prose-pre:rounded-md prose-pre:border prose-pre:border-gray-700/50 prose-code:text-[#ce9178] prose-code:before:content-none prose-code:after:content-none prose-code:px-1 prose-code:py-0.5 prose-code:bg-gray-700/50 prose-code:rounded prose-headings:text-gray-100 prose-headings:font-medium prose-headings:mb-3 prose-headings:pb-1 prose-headings:border-b prose-headings:border-gray-700/50 prose-a:text-blue-400 hover:prose-a:text-blue-300">
-                  <div className="mb-4">
+                <div className="prose prose-invert prose-sm md:prose-base text-gray-300 overflow-x-hidden prose-p:my-4 prose-li:my-1 prose-pre:p-3 prose-pre:my-3 prose-pre:bg-[#1e1e1e] prose-pre:rounded-md prose-pre:border prose-pre:border-gray-700/50 prose-pre:overflow-x-auto prose-code:text-[#ce9178] prose-code:before:content-none prose-code:after:content-none prose-code:px-1 prose-code:py-0.5 prose-code:bg-gray-700/50 prose-code:rounded prose-headings:text-gray-100 prose-headings:font-medium prose-headings:mb-3 prose-headings:pb-1 prose-headings:border-b prose-headings:border-gray-700/50 prose-a:text-blue-400 hover:prose-a:text-blue-300"> {/* Added overflow-x-hidden directly to prose div */}
+                  <div className="mb-6"> {/* Increased margin */}
                     <h2 className="text-base md:text-lg">Description</h2>
                     {renderContent(question?.description)}
                   </div>
-                  <div className="mb-4">
+                  <div className="mb-6"> {/* Increased margin */}
                     <h2 className="text-base md:text-lg">Examples</h2>
                     {renderContent(question?.examples)}
                   </div>
-                  <div>
+                  <div> {/* No margin needed below the last item */}
                     <h2 className="text-base md:text-lg">Constraints</h2>
                     {renderContent(question?.constraints)}
                   </div>
