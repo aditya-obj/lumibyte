@@ -27,10 +27,10 @@ export default function EditSolution({ params }) {
   };
 
   // Form states
-  const [startCode, setStartCode] = useState('def solution():\n    # Write your code here\n    pass');
+  const [startCode, setStartCode] = useState('');
   const [solutions, setSolutions] = useState([{
     title: '',
-    code: 'def solution():\n    # Write your solution here\n    pass',
+    code: '',
     timeComplexity: '',
     approach: ''
   }]);
@@ -215,6 +215,34 @@ export default function EditSolution({ params }) {
 
             {solutions.map((solution, index) => (
               <div key={index} className="mb-8 p-6 bg-gray-800/30 rounded-xl">
+                {/* Add delete button only for solutions after the first one */}
+                {index > 0 && (
+                  <div className="flex justify-end mb-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newSolutions = solutions.filter((_, i) => i !== index);
+                        setSolutions(newSolutions);
+                      }}
+                      className="text-red-400 hover:text-red-300 transition-colors flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-700/50"
+                    >
+                      <svg 
+                        className="w-4 h-4" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={2} 
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" 
+                        />
+                      </svg>
+                      Remove Solution
+                    </button>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium mb-2 text-gray-300">Title</label>

@@ -95,7 +95,7 @@ export default function EditSolutions() {
               Questions Needing Solutions
             </h1>
             <p className="text-gray-400 mt-2">
-              Click on a question to add or edit its solutions and starter code
+              {questions.length} {questions.length === 1 ? 'question needs' : 'questions need'} solutions or starter code
             </p>
           </div>
         </div>
