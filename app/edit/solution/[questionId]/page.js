@@ -84,14 +84,14 @@ export default function EditSolution({ params }) {
       return;
     }
 
-    // Validation for solutions (optional, but if present, all fields must be filled)
-    if (solutions.length > 0 && !solutions.every(s => 
-      s.title.trim() && 
-      s.code.trim() && 
-      s.timeComplexity.trim() &&
-      s.approach.trim()
-    )) {
-      setError('If adding solutions, all fields (title, code, time complexity, and approach) must be filled');
+    // Validation for solutions (if any solution has partial data, all its fields must be filled)
+    const hasIncompleteSolution = solutions.some(s => 
+      (s.title || s.code || s.timeComplexity || s.approach) && 
+      (!s.title.trim() || !s.code.trim() || !s.timeComplexity.trim() || !s.approach.trim())
+    );
+
+    if (hasIncompleteSolution) {
+      setError('Please fill all fields for each solution (title, code, time complexity, and approach) or remove incomplete solutions');
       return;
     }
 
@@ -100,9 +100,16 @@ export default function EditSolution({ params }) {
         [`users/${user.uid}/questions/${unwrappedParams.questionId}/empty_code`]: startCode,
       };
 
-      // Only update solutions if there are any
-      if (solutions.length > 0) {
-        updates[`users/${user.uid}/questions/${unwrappedParams.questionId}/solutions`] = solutions;
+      // Only update solutions if there are any non-empty solutions
+      const nonEmptySolutions = solutions.filter(s => 
+        s.title.trim() || s.code.trim() || s.timeComplexity.trim() || s.approach.trim()
+      );
+
+      if (nonEmptySolutions.length > 0) {
+        updates[`users/${user.uid}/questions/${unwrappedParams.questionId}/solutions`] = nonEmptySolutions;
+      } else {
+        // If no solutions, remove the solutions field from database
+        updates[`users/${user.uid}/questions/${unwrappedParams.questionId}/solutions`] = null;
       }
 
       await update(ref(db), updates);
