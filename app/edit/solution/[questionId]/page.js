@@ -84,14 +84,14 @@ export default function EditSolution({ params }) {
       return;
     }
 
-    // Validation for solutions (if any solution has partial data, all its fields must be filled)
+    // Validation for solutions (title, code, and timeComplexity are required if any is filled)
     const hasIncompleteSolution = solutions.some(s => 
-      (s.title || s.code || s.timeComplexity || s.approach) && 
-      (!s.title.trim() || !s.code.trim() || !s.timeComplexity.trim() || !s.approach.trim())
+      (s.title || s.code || s.timeComplexity) && 
+      (!s.title.trim() || !s.code.trim() || !s.timeComplexity.trim())
     );
 
     if (hasIncompleteSolution) {
-      setError('Please fill all fields for each solution (title, code, time complexity, and approach) or remove incomplete solutions');
+      setError('Please fill all required fields for each solution (title, code, and time complexity) or remove incomplete solutions');
       return;
     }
 
@@ -102,7 +102,7 @@ export default function EditSolution({ params }) {
 
       // Only update solutions if there are any non-empty solutions
       const nonEmptySolutions = solutions.filter(s => 
-        s.title.trim() || s.code.trim() || s.timeComplexity.trim() || s.approach.trim()
+        s.title.trim() || s.code.trim() || s.timeComplexity.trim()
       );
 
       if (nonEmptySolutions.length > 0) {
@@ -283,7 +283,7 @@ export default function EditSolution({ params }) {
 
                 <div className="mb-4">
                   <label className="block text-sm font-medium mb-2 text-gray-300">
-                    Approach
+                    Approach (Optional)
                   </label>
                   <textarea
                     value={solution.approach}
@@ -293,7 +293,7 @@ export default function EditSolution({ params }) {
                       setSolutions(newSolutions);
                     }}
                     className="w-full h-[150px] px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 resize-none"
-                    placeholder="Explain your approach..."
+                    placeholder="Explain your approach (optional)..."
                   />
                 </div>
 
