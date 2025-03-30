@@ -18,6 +18,7 @@ export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
   const [hasImported, setHasImported] = useState(false);
+  const [needsSolutions, setNeedsSolutions] = useState(false);
   const router = useRouter();
 
   const handleAuthRequired = () => {
@@ -52,8 +53,18 @@ export default function Home() {
       get(questionsRef).then((snapshot) => {
         if (snapshot.exists()) {
           const questionsData = [];
+          let hasImportedAny = false;
+          let needsSolutionsFlag = false;
+
           snapshot.forEach((childSnapshot) => {
             const question = childSnapshot.val();
+            if (question.importedAt) {
+              hasImportedAny = true;
+            }
+            // Check if solutions or empty_code is missing
+            if (!question.solutions || !question.empty_code) {
+              needsSolutionsFlag = true;
+            }
             questionsData.push({
               id: childSnapshot.key,
               title: question.title,
@@ -62,6 +73,9 @@ export default function Home() {
               lastRevised: question.lastRevised || null
             });
           });
+
+          setHasImported(hasImportedAny);
+          setNeedsSolutions(needsSolutionsFlag);
           setQuestions(questionsData);
         }
         setIsLoading(false);
@@ -279,27 +293,26 @@ export default function Home() {
               Add Questions
             </button>
           ) : (
-            <Link 
-              href="/questions"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:-translate-y-1 group"
-            >
-              <svg className="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add Questions
-            </Link>
-          )}
-          
-          {user && (
             <div className="flex flex-col sm:flex-row gap-4">
+              {/* Dashboard Button */}
               <Link 
                 href="/dashboard"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:-translate-y-1 group"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:-translate-y-1 group"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
                 Dashboard
+              </Link>
+
+              <Link 
+                href="/questions"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:-translate-y-1 group"
+              >
+                <svg className="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add Questions
               </Link>
 
               {/* Admin Questions - Only visible to admin */}
@@ -315,8 +328,8 @@ export default function Home() {
                 </Link>
               )}
 
-              {/* Only show Import button if not yet imported */}
-              {!hasImported && (
+              {/* Show Import Questions OR Add Solutions button */}
+              {!hasImported ? (
                 <button 
                   onClick={handleImportQuestions}
                   disabled={isLoading}
@@ -326,6 +339,16 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                   </svg>
                   {isLoading ? 'Importing...' : 'Import Questions'}
+                </button>
+              ) : needsSolutions && (
+                <button 
+                  onClick={() => router.push('/edit/solutions')}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(6,182,212,0.5)] hover:-translate-y-1 group"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add Solutions
                 </button>
               )}
             </div>

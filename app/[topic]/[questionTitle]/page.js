@@ -70,6 +70,19 @@ export default function QuestionPage({ params }) {
   const [revealedSolutions, setRevealedSolutions] = useState(new Set());
   const [isRevising, setIsRevising] = useState(false);
   const router = useRouter();
+  const [previousPath, setPreviousPath] = useState('/');
+
+  // Add this useEffect to capture the previous path when component mounts
+  useEffect(() => {
+    const referrer = document.referrer;
+    if (referrer.includes('/dashboard')) {
+      setPreviousPath('/dashboard');
+    } else if (referrer.includes('/edit/question')) {
+      setPreviousPath('/dashboard');
+    } else {
+      setPreviousPath('/');
+    }
+  }, []);
 
   // Handler for the new left tabs
   const handleLeftTabChange = (index) => {
@@ -212,6 +225,10 @@ export default function QuestionPage({ params }) {
     return <div className="min-h-screen p-8 bg-[#1a1a1a] text-gray-400 flex items-center justify-center">Question not found or access denied.</div>;
   }
 
+  const handleBackClick = () => {
+    router.push(previousPath);
+  };
+
   return (
     // Reduce horizontal padding, keep vertical padding
     <div className="min-h-screen py-4 sm:py-6 md:py-8 px-2 sm:px-3 md:px-4 bg-[#1a1a1a] text-gray-300">
@@ -220,7 +237,7 @@ export default function QuestionPage({ params }) {
         {/* Header section with Back Button */}
         <div className="flex items-center gap-3 mb-4">
            <button
-            onClick={() => router.back()}
+            onClick={handleBackClick}
             className="text-gray-400 hover:text-white transition-colors p-1.5 rounded-md hover:bg-gray-700/50 cursor-pointer" /* Adjusted padding/rounding */
             aria-label="Go back"
           >
@@ -234,16 +251,43 @@ export default function QuestionPage({ params }) {
           </h1>
         </div>
 
-        {/* Mark as Revised Button - Moved below title/back button */}
-        <div className="flex justify-end mb-4"> {/* Reduced margin */}
+        {/* Mark as Revised Button and Edit Button Container */}
+        <div className="flex justify-end gap-2 mb-4"> {/* Added gap-2 for spacing between buttons */}
+          {/* Edit Button */}
+          <button
+            onClick={() => router.push(`/edit/question?id=${question.id}`)}
+            className={`
+              bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#1a1a1a]
+              text-white px-3 py-1 rounded-md transition-colors duration-200 cursor-pointer
+              flex items-center gap-1 text-xs font-medium shrink-0
+            `}
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-3.5 w-3.5" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor" 
+              strokeWidth={2}
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" 
+              />
+            </svg>
+            <span>Edit</span>
+          </button>
+
+          {/* Existing Mark as Revised Button */}
           <button
             onClick={handleRevision}
             disabled={isRevising}
             className={`
-              bg-emerald-600 hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-[#1a1a1a] /* Adjusted offset color */
-              text-white px-3 py-1 rounded-md transition-colors duration-200 cursor-pointer /* Adjusted padding, Added cursor-pointer */
+              bg-emerald-600 hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-[#1a1a1a]
+              text-white px-3 py-1 rounded-md transition-colors duration-200 cursor-pointer
               disabled:opacity-60 disabled:cursor-not-allowed
-              flex items-center gap-1 text-xs font-medium shrink-0 /* Adjusted gap */
+              flex items-center gap-1 text-xs font-medium shrink-0
             `}
           >
           {isRevising ? (
