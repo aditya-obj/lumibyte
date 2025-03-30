@@ -19,6 +19,7 @@ export default function Home() {
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
   const [hasImported, setHasImported] = useState(false);
   const [needsSolutions, setNeedsSolutions] = useState(false);
+  const [hasNewQuestionsToImport, setHasNewQuestionsToImport] = useState(false);
   const router = useRouter();
 
   const handleAuthRequired = () => {
@@ -39,50 +40,77 @@ export default function Home() {
   useEffect(() => {
     if (user) {
       setIsLoading(true);
-      // Fetch topics
-      const topicsRef = ref(db, `users/${user.uid}/topics`);
-      get(topicsRef).then((snapshot) => {
-        if (snapshot.exists()) {
-          const topicsData = Object.values(snapshot.val());
-          setTopics(topicsData);
-        }
-      });
-
-      // Fetch questions with timestamp
       const questionsRef = ref(db, `users/${user.uid}/questions`);
       get(questionsRef).then((snapshot) => {
         if (snapshot.exists()) {
           const questionsData = [];
-          let hasImportedAny = false;
           let needsSolutionsFlag = false;
 
           snapshot.forEach((childSnapshot) => {
             const question = childSnapshot.val();
-            if (question.importedAt) {
-              hasImportedAny = true;
-            }
+            
             // Check if solutions or empty_code is missing
             if (!question.solutions || !question.empty_code) {
               needsSolutionsFlag = true;
             }
+
             questionsData.push({
               id: childSnapshot.key,
               title: question.title,
               topic: question.topic,
               difficulty: question.difficulty,
-              lastRevised: question.lastRevised || null
+              lastRevised: question.lastRevised || null,
+              hasSolutions: !!question.solutions,
+              hasEmptyCode: !!question.empty_code
             });
           });
 
-          setHasImported(hasImportedAny);
           setNeedsSolutions(needsSolutionsFlag);
           setQuestions(questionsData);
         }
         setIsLoading(false);
-      }).catch(() => {
+      }).catch((error) => {
+        console.error('Error fetching questions:', error);
         setIsLoading(false);
       });
     }
+  }, [user]);
+
+  // Separate useEffect for checking new questions to import
+  useEffect(() => {
+    const checkForNewQuestions = async () => {
+      if (!user) return;
+
+      try {
+        const publicQuestionsRef = ref(db, 'public/questions');
+        const publicQuestionsSnapshot = await get(publicQuestionsRef);
+        
+        const userQuestionsRef = ref(db, `users/${user.uid}/questions`);
+        const userQuestionsSnapshot = await get(userQuestionsRef);
+
+        if (!publicQuestionsSnapshot.exists()) {
+          setHasNewQuestionsToImport(false);
+          return;
+        }
+
+        const publicQuestions = Object.values(publicQuestionsSnapshot.val());
+        const userQuestions = userQuestionsSnapshot.exists() 
+          ? Object.values(userQuestionsSnapshot.val()) 
+          : [];
+
+        const hasNewQuestions = publicQuestions.some(publicQuestion => 
+          !userQuestions.some(userQuestion => 
+            userQuestion.title.toLowerCase() === publicQuestion.title.toLowerCase()
+          )
+        );
+
+        setHasNewQuestionsToImport(hasNewQuestions);
+      } catch (error) {
+        console.error('Error checking for new questions:', error);
+      }
+    };
+
+    checkForNewQuestions();
   }, [user]);
 
   const createSlug = (text) => {
@@ -180,28 +208,55 @@ export default function Home() {
 
     setIsLoading(true);
     try {
-      // Get public questions
+      // Get public questions and topics
       const publicQuestionsRef = ref(db, 'public/questions');
-      const publicSnapshot = await get(publicQuestionsRef);
+      const publicTopicsRef = ref(db, 'public/topics');
+      const [publicQuestionsSnapshot, publicTopicsSnapshot] = await Promise.all([
+        get(publicQuestionsRef),
+        get(publicTopicsRef)
+      ]);
       
-      if (!publicSnapshot.exists()) {
+      if (!publicQuestionsSnapshot.exists()) {
         alert('No public questions available to import');
         setIsLoading(false);
         return;
       }
 
-      // Get user's existing questions to avoid duplicates
+      // Get user's existing questions and topics
       const userQuestionsRef = ref(db, `users/${user.uid}/questions`);
-      const userSnapshot = await get(userQuestionsRef);
-      const existingQuestions = userSnapshot.exists() ? Object.values(userSnapshot.val()) : [];
+      const userTopicsRef = ref(db, `users/${user.uid}/topics`);
+      const [userQuestionsSnapshot, userTopicsSnapshot] = await Promise.all([
+        get(userQuestionsRef),
+        get(userTopicsRef)
+      ]);
+
+      const existingQuestions = userQuestionsSnapshot.exists() 
+        ? Object.values(userQuestionsSnapshot.val()) 
+        : [];
+      const existingTopics = userTopicsSnapshot.exists() 
+        ? Object.values(userTopicsSnapshot.val()) 
+        : [];
+
+      // Import topics first
+      if (publicTopicsSnapshot.exists()) {
+        const publicTopics = Object.entries(publicTopicsSnapshot.val());
+        
+        for (const [topicId, topicName] of publicTopics) {
+          // Check if topic already exists
+          if (!existingTopics.includes(topicName)) {
+            // Add new topic using the same ID as public topic
+            await set(ref(db, `users/${user.uid}/topics/${topicId}`), topicName);
+          }
+        }
+      }
       
-      // Import each public question that isn't already in user's questions
-      const publicQuestions = Object.values(publicSnapshot.val());
+      // Import questions
+      const publicQuestions = Object.values(publicQuestionsSnapshot.val());
       
       for (const question of publicQuestions) {
         // Check if question already exists (by title)
         const isDuplicate = existingQuestions.some(
-          eq => eq.title === question.title
+          eq => eq.title.toLowerCase() === question.title.toLowerCase()
         );
 
         if (!isDuplicate) {
@@ -230,6 +285,45 @@ export default function Home() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const checkForNewQuestions = async () => {
+      if (!user) return;
+
+      try {
+        // Get public questions
+        const publicQuestionsRef = ref(db, 'public/questions');
+        const publicQuestionsSnapshot = await get(publicQuestionsRef);
+        
+        // Get user's questions
+        const userQuestionsRef = ref(db, `users/${user.uid}/questions`);
+        const userQuestionsSnapshot = await get(userQuestionsRef);
+
+        if (!publicQuestionsSnapshot.exists()) {
+          setHasNewQuestionsToImport(false);
+          return;
+        }
+
+        const publicQuestions = Object.values(publicQuestionsSnapshot.val());
+        const userQuestions = userQuestionsSnapshot.exists() 
+          ? Object.values(userQuestionsSnapshot.val()) 
+          : [];
+
+        // Check if there are any questions that haven't been imported
+        const hasNewQuestions = publicQuestions.some(publicQuestion => 
+          !userQuestions.some(userQuestion => 
+            userQuestion.title.toLowerCase() === publicQuestion.title.toLowerCase()
+          )
+        );
+
+        setHasNewQuestionsToImport(hasNewQuestions);
+      } catch (error) {
+        console.error('Error checking for new questions:', error);
+      }
+    };
+
+    checkForNewQuestions();
+  }, [user]);
 
   return (
     <div className="min-h-screen p-4 sm:p-6 md:p-8 transition-colors relative overflow-hidden bg-[#111827]">
@@ -329,7 +423,7 @@ export default function Home() {
               )}
 
               {/* Show Import Questions OR Add Solutions button */}
-              {!hasImported ? (
+              {hasNewQuestionsToImport && (
                 <button 
                   onClick={handleImportQuestions}
                   disabled={isLoading}
@@ -338,18 +432,20 @@ export default function Home() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                   </svg>
-                  {isLoading ? 'Importing...' : 'Import Questions'}
+                  {isLoading ? 'Importing...' : 'Import New Questions'}
                 </button>
-              ) : needsSolutions && (
-                <button 
-                  onClick={() => router.push('/edit/solutions')}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(6,182,212,0.5)] hover:-translate-y-1 group"
+              )}
+
+              {needsSolutions && (
+                <Link 
+                  href="/edit/solutions"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(234,179,8,0.5)] hover:-translate-y-1"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   Add Solutions
-                </button>
+                </Link>
               )}
             </div>
           )}
@@ -628,7 +724,9 @@ export default function Home() {
             <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>You have {questions.length} questions in your collection across {topics.length} topics.</span>
+            <span>
+              You have {questions.length} questions in your collection across {new Set(questions.map(q => q.topic)).size} topics.
+            </span>
           </div>
         </div>
       )}
