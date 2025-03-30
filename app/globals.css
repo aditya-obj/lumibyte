@@ -198,3 +198,27 @@ button:active {
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out forwards; /* Apply the animation */
 }
+
+/* Custom Scrollbar for specific elements */
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(55, 65, 81, 0.5); /* gray-700 with opacity */
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(107, 114, 128, 0.7); /* gray-500 with opacity */
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.8); /* gray-400 with opacity */
+  }
+  /* Firefox scrollbar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(107, 114, 128, 0.7) rgba(55, 65, 81, 0.5);
+  }
+}
