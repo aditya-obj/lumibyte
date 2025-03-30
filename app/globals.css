@@ -253,28 +253,22 @@ button:active {
 }
 
 /* Question content styling */
-.question-container {
-  @apply relative z-10;
-}
-
 .question-content {
   @apply text-gray-300 leading-relaxed;
 }
 
+/* Headings */
 .question-content h1,
 .question-content h2,
 .question-content h3,
 .question-content h4 {
-  @apply text-white font-semibold my-4;
+  @apply text-white font-medium mb-3;
 }
 
-.question-content p {
-  @apply my-3;
-}
-
+/* Lists */
 .question-content ul,
 .question-content ol {
-  @apply my-4 pl-6 space-y-2;
+  @apply my-3 pl-6 space-y-2;
 }
 
 .question-content ul {
@@ -282,15 +276,16 @@ button:active {
 }
 
 .question-content ol {
-  @apply list-decimal;
+  @apply list-decimal marker:text-blue-400 marker:font-medium;
 }
 
 .question-content li {
   @apply text-gray-300;
 }
 
+/* Code blocks */
 .question-content pre {
-  @apply my-4 p-4 bg-[#282c34] rounded-lg overflow-x-auto border border-[#3e4451];
+  @apply my-4 p-4 bg-[#282c34] rounded-lg overflow-x-auto;
 }
 
 .question-content code {
@@ -301,16 +296,43 @@ button:active {
   @apply p-0 bg-transparent;
 }
 
-.question-content blockquote {
-  @apply my-4 pl-4 border-l-4 border-gray-600 italic text-gray-400;
+/* Images */
+.question-content img {
+  @apply my-4 mx-auto rounded-lg max-w-full;
+}
+
+/* Input/Output highlighting */
+.question-content strong {
+  @apply text-blue-400 font-semibold;
+}
+
+/* Constraints specific styling */
+.question-content p {
+  @apply my-2;
+}
+
+/* Numbers in constraints */
+.question-content p:has(code) {
+  @apply block my-3;
+}
+
+.question-content p code {
+  @apply text-blue-400 bg-blue-500/10;
+}
+
+/* Bullet points in constraints */
+.question-content ul li,
+.question-content p:has(•) {
+  @apply block my-3;
+}
+
+/* Example specific styling */
+.example-number {
+  @apply inline-block bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded text-sm font-medium mb-2;
 }
 
 /* Responsive adjustments */
 @media (max-width: 640px) {
-  .question-container {
-    @apply space-y-6;
-  }
-  
   .question-content pre {
     @apply text-sm;
   }
@@ -319,6 +341,6 @@ button:active {
   .question-content h2,
   .question-content h3,
   .question-content h4 {
-    @apply text-lg;
+    @apply text-base;
   }
 }

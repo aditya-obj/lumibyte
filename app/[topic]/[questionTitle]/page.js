@@ -1,13 +1,24 @@
 'use client';
+import { auth, db } from '@/components/firebase.config';
 import Editor from '@monaco-editor/react';
+import { format, startOfDay } from 'date-fns';
+import { get, ref, set, update } from 'firebase/database';
 import { marked } from 'marked';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
-import { auth, db } from '@/components/firebase.config';
-import { format, startOfDay } from 'date-fns';
-import { get, ref, set, update } from 'firebase/database';
+// Add the splitExamples function at the top level
+const splitExamples = (examples) => {
+  if (!examples) return [];
+  
+  // Match "Example N:" pattern and remove it from the content
+  const matches = examples.match(/Example \d+:[\s\S]*?(?=Example \d+:|$)/g) || [];
+  
+  return matches.map(example => 
+    example.replace(/^Example \d+:\s*/, '').trim() // Remove the "Example N:" prefix
+  );
+};
 
 const createSlug = (text) => {
   return text
@@ -58,6 +69,19 @@ const renderContent = (content) => {
       />
     );
   });
+};
+
+// Add this helper function to format constraints
+const formatConstraints = (constraints) => {
+  if (!constraints) return '';
+  
+  // Add line breaks between constraints if they don't already exist
+  return constraints
+    .replace(/•/g, '\n•') // Add line break before bullet points
+    .replace(/([.।])\s*(?=[A-Z0-9])/g, '$1\n') // Add line break after periods followed by capital letters or numbers
+    .split('\n')
+    .filter(line => line.trim())
+    .join('\n\n'); // Add extra line break between constraints
 };
 
 export default function QuestionPage({ params }) {
@@ -353,35 +377,35 @@ export default function QuestionPage({ params }) {
               ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
               {activeLeftTab === 0 ? (
                 <div className="prose prose-invert max-w-none">
-                  <div className="space-y-8 question-container">
-                    <div className="bg-[#1f2937] rounded-xl p-6 shadow-lg border border-[#374151]">
-                      <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                        <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg text-sm">
-                          Problem Description
-                        </span>
-                      </h3>
+                  <div className="space-y-6">
+                    {/* Problem Description */}
+                    <div>
+                      <h3 className="text-lg font-medium text-white mb-4">Problem Description</h3>
                       {renderContent(question?.description)}
                     </div>
                     
-                    <div className="bg-[#1f2937] rounded-xl p-6 shadow-lg border border-[#374151]">
-                      <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                        <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-lg text-sm">
-                          Examples
-                        </span>
-                      </h3>
-                      {renderContent(question?.examples)}
+                    {/* Examples */}
+                    <div>
+                      <h3 className="text-lg font-medium text-white mb-4">Examples</h3>
+                      <div className="space-y-6">
+                        {splitExamples(question?.examples).map((example, index) => (
+                          <div key={index} className="space-y-2">
+                            <div className="inline-block bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded text-sm font-medium">
+                              Example {index + 1}
+                            </div>
+                            {renderContent(example)}
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
-                    <div className="bg-[#1f2937] rounded-xl p-6 shadow-lg border border-[#374151]">
-                      <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                        <span className="bg-purple-500/20 text-purple-400 px-3 py-1 rounded-lg text-sm">
-                          Constraints
-                        </span>
-                      </h3>
-                      {renderContent(question?.constraints)}
+                    {/* Constraints */}
+                    <div className="mb-8">
+                      <h3 className="text-lg font-medium text-white mb-4">Constraints</h3>
+                      {renderContent(formatConstraints(question?.constraints))}
                     </div>
                   </div>
                 </div>
@@ -503,7 +527,7 @@ const MobileDescription = ({ question, activeLeftTab, handleLeftTabChange, rende
 
             <div className="mb-12">
               <h3 className="text-base font-medium text-white mb-3">Constraints</h3>
-              {renderContent(question?.constraints)}
+              {renderContent(formatConstraints(question?.constraints))}
             </div>
           </div>
         </div>
