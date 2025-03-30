@@ -71,24 +71,7 @@ button:active {
   transform: translateY(0);
 }
 
-/* Add button hover effect */
-button::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 300%;
-  height: 300%;
-  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 50%);
-  transform: translate(-50%, -50%) scale(0);
-  opacity: 0;
-  transition: transform 0.5s ease, opacity 0.3s ease;
-}
-
-button:hover::after {
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
-}
+/* Removed global button::after hover effect causing layout issues */
 
 /* Add glass morphism effect to containers */
 .glass-container {

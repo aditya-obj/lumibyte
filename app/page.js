@@ -530,7 +530,7 @@ export default function Home() {
             </button>
             
             {showTopicDropdown && (
-              <div className="absolute mt-2 w-64 bg-gray-800 rounded-xl shadow-lg py-2 z-50 border border-gray-700 max-h-60 overflow-y-auto"> {/* Increased z-index */}
+              <div className="absolute mt-2 w-64 bg-gray-800 rounded-xl shadow-lg py-2 z-50 border border-gray-700 max-h-60 overflow-y-auto hide-scrollbar"> {/* Added hide-scrollbar class */}
                 {topics.length > 0 ? (
                   topics.map((topic) => (
                     <button

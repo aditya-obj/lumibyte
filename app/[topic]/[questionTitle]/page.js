@@ -382,7 +382,8 @@ export default function QuestionPage({ params }) {
               {/* Conditional Rendering based on activeLeftTab */}
               {activeLeftTab === 0 && (
                 /* Question Content */
-                <div className="prose prose-invert prose-sm md:prose-base text-gray-300 overflow-x-hidden prose-p:my-4 prose-li:my-1 prose-pre:p-3 prose-pre:my-3 prose-pre:bg-[#1e1e1e] prose-pre:rounded-md prose-pre:border prose-pre:border-gray-700/50 prose-pre:overflow-x-auto prose-code:text-[#ce9178] prose-code:before:content-none prose-code:after:content-none prose-code:px-1 prose-code:py-0.5 prose-code:bg-gray-700/50 prose-code:rounded prose-headings:text-gray-100 prose-headings:font-medium prose-headings:mb-3 prose-headings:pb-1 prose-headings:border-b prose-headings:border-gray-700/50 prose-a:text-blue-400 hover:prose-a:text-blue-300"> {/* Added overflow-x-hidden directly to prose div */}
+                /* Adjusted prose classes for LeetCode-like styling */
+                <div className="prose prose-invert prose-sm md:prose-base max-w-none text-gray-300 prose-p:my-3 prose-li:my-1 prose-headings:text-gray-100 prose-headings:font-medium prose-headings:mb-3 prose-headings:pb-1 prose-headings:border-b prose-headings:border-gray-700/50 prose-code:text-gray-200 prose-code:bg-gray-700/40 prose-code:px-1 prose-code:py-0.5 prose-code:rounded-sm prose-code:font-normal prose-code:before:content-none prose-code:after:content-none prose-pre:p-3 prose-pre:my-3 prose-pre:bg-[#1e1e1e] prose-pre:rounded-md prose-pre:border prose-pre:border-gray-700/50 prose-pre:overflow-x-auto prose-a:text-blue-400 hover:prose-a:text-blue-300">
                   <div className="mb-6"> {/* Increased margin */}
                     <h2 className="text-base md:text-lg">Description</h2>
                     {renderContent(question?.description)}
