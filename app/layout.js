@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "LumiCode - DSA Revision Portal",
+  title: "LumiByte - DSA Revision Portal",
   description: "Created by Devs",
 };
 
