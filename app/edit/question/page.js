@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { auth, db } from '@/components/firebase.config';
 import { ref, get, update } from 'firebase/database';
 import Editor from '@monaco-editor/react';
@@ -17,9 +17,10 @@ const createSlug = (text) => {
     .replace(/^-+|-+$/g, '');
 };
 
-export default function EditQuestionPage() {
-  const router = useRouter();
+// Create a wrapper component for the search params functionality
+function EditQuestionContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [user, setUser] = useState(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -419,5 +420,18 @@ export default function EditQuestionPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function EditQuestionPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen p-8 flex justify-center items-center bg-[#111827]">
+        <div className="animate-spin w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full"></div>
+      </div>
+    }>
+      <EditQuestionContent />
+    </Suspense>
   );
 }
