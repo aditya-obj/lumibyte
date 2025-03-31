@@ -350,15 +350,15 @@ export default function QuestionsPage() {
           
           {/* Solutions List */}
           <div className="space-y-6">
-             {solutions.map((solution, index) => (
+            {solutions.map((solution, index) => (
               <div key={index} className="p-4 rounded-lg bg-gray-800/40 border border-gray-700 animate-fadeIn">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-base sm:text-lg font-medium text-gray-200">Solution {index + 1}</h3>
-                  {solutions.length > 1 && ( // Only show remove if more than one solution
+                  {index > 0 && ( // Only show remove button if it's not the first solution
                     <button
                       type="button"
                       onClick={() => setSolutions(solutions.filter((_, i) => i !== index))}
-                      className="text-red-500 hover:text-red-400 transition-colors text-xs px-2 py-1 rounded hover:bg-red-500/10 cursor-pointer" // Added cursor-pointer
+                      className="text-red-500 hover:text-red-400 transition-colors text-xs px-2 py-1 rounded hover:bg-red-500/10 cursor-pointer"
                     >
                       Remove
                     </button>
