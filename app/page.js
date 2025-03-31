@@ -347,7 +347,7 @@ export default function Home() {
       {/* Header area with improved responsiveness */}
       <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 sm:mb-12">
         <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient">
-          DSA Practice
+          LumiCode
         </h1>
         
         {/* Login/Logout Button */}
