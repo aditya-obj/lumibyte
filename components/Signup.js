@@ -515,7 +515,7 @@ export default function Signup({ onClose = () => {}, currentPath = "/" }) {
 
             <div className="verification-body">
               <p>
-                We've sent you a verification link. Please check your inbox and
+                We&apos;ve sent you a verification link. Please check your inbox and
                 click the link to verify your account.
               </p>
 
@@ -540,7 +540,7 @@ export default function Signup({ onClose = () => {}, currentPath = "/" }) {
             </div>
 
             <div className="verification-footer">
-              <small>Can't find the email? Check your spam folder</small>
+              <small>Can&apos;t find the email? Check your spam folder</small>
             </div>
           </div>
         </div>

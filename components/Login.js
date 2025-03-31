@@ -221,7 +221,7 @@ export default function Login({
               Forgot Password?
             </button>
             <p className="signup-prompt">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <button onClick={toggleLoginSignup} className="switch-button">
                 Sign Up
               </button>
@@ -256,7 +256,7 @@ export default function Login({
                 <FaCheckCircle className="success-icon" />
                 <h2>Reset Link Sent!</h2>
                 <p>
-                  We've sent password reset instructions to your email address.
+                  We&apos;ve sent password reset instructions to your email address.
                   Please check your inbox and follow the instructions to reset
                   your password.
                 </p>

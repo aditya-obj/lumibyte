@@ -63,7 +63,7 @@ export default function UpdateProfile() {
             Set Your Display Name
           </h2>
           <p className="mt-2 text-center text-sm text-gray-400">
-            Please enter the name you'd like to use on the dashboard.
+            Please enter the name you&apos;d like to use on the dashboard.
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
