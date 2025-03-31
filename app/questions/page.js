@@ -144,41 +144,35 @@ export default function QuestionsPage() {
     // Adjusted padding for better spacing on different screens
     <div className="min-h-screen p-4 sm:p-6 md:p-8 bg-gray-900 text-gray-200">
       {/* Header section */}
-      <div className="max-w-7xl mx-auto mb-6 sm:mb-8">
-        <div className="flex items-center gap-4">
-           <button
+      <div className="max-w-7xl mx-auto mb-8">
+        <div className="flex items-center gap-4 mb-4">
+          <button
             onClick={() => router.back()}
-            className="text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700/50 cursor-pointer"
+            className="universal-back-button"
             aria-label="Go back"
           >
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
-              className="h-6 w-6" 
-              fill="none" 
               viewBox="0 0 24 24" 
+              fill="none" 
               stroke="currentColor" 
               strokeWidth={2}
+              strokeLinecap="round" 
+              strokeLinejoin="round"
             >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                d="M10 19l-7-7m0 0l7-7m-7 7h18" 
-              />
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
+            <span>Back</span>
           </button>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">Add New Question</h1>
+          <div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+              Add New Question
+            </h1>
+            <p className="text-gray-400 mt-2 text-sm sm:text-base">
+              Create and manage your coding practice questions
+            </p>
+          </div>
         </div>
-         {/* Success/Error Messages */}
-         {success && (
-          <div className="mt-4 bg-green-500/10 border border-green-500/50 text-green-400 p-3 rounded-lg text-sm">
-            Question added successfully!
-          </div>
-        )}
-        {error && (
-          <div className="mt-4 bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
       </div>
 
       {/* Form Section */}

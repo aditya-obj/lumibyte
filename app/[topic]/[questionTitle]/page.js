@@ -277,17 +277,29 @@ export default function QuestionPage({ params }) {
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Top Navigation Bar */}
       <nav className="bg-[#1a1a1a] border-b border-[#2a2a2a] sticky top-0 z-50">
-        <div className="max-w-[1920px] mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
+        <div className="max-w-[1920px] mx-auto px-4 py-2 h-14 sm:h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 overflow-hidden">
             <button
               onClick={() => router.push(previousPath)}
-              className="p-1.5 sm:p-2 hover:bg-[#2a2a2a] rounded-lg transition-colors flex-shrink-0 cursor-pointer"
+              className="universal-back-button"
+              aria-label="Go back"
             >
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth={2} 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
+              <span>Back</span>
             </button>
-            <h1 className="text-gray-200 font-medium truncate text-sm sm:text-base">{question?.title}</h1>
+            <h1 className="text-gray-200 font-medium truncate text-sm sm:text-base">
+              {question?.title}
+            </h1>
           </div>
           
           <div className="flex items-center gap-2">

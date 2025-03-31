@@ -17,6 +17,14 @@
   --color: #ffffff;
   --theme-color: #c99700;
   --orange: #c99700;
+
+  /* Modern Scrollbar Styles */
+  --scrollbar-width: 8px; /* Made thinner */
+  --scrollbar-height: 8px; /* Made thinner */
+  --scrollbar-track-color: rgba(55, 65, 81, 0.1);
+  --scrollbar-thumb-color: rgba(99, 102, 241, 0.4); /* Adjusted opacity */
+  --scrollbar-thumb-hover-color: rgba(99, 102, 241, 0.6); /* Adjusted opacity */
+  --scrollbar-border-radius: 4px; /* Adjusted to match width */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -59,8 +67,8 @@ code {
 /* Enhanced button styles */
 button {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  /* position: relative; /* Removed potential conflict with fixed positioning */
   overflow: hidden;
+  cursor: pointer;
 }
 
 button:hover {
@@ -199,32 +207,6 @@ button:active {
   animation: fadeIn 0.3s ease-out forwards; /* Apply the animation */
 }
 
-/* Custom Scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(55, 65, 81, 0.1);
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.5);
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(107, 114, 128, 0.7);
-}
-
-/* Firefox scrollbar */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(107, 114, 128, 0.5) rgba(55, 65, 81, 0.1);
-}
-
 /* Hide scrollbar for Chrome, Safari and Opera */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
@@ -343,4 +325,191 @@ button:active {
   .question-content h4 {
     @apply text-base;
   }
+}
+
+/* Admin back button styles */
+@media (max-width: 640px) {
+  .admin-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .admin-back-button {
+    min-height: 44px; /* Better touch target */
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Universal back button styles */
+.universal-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: var(--code-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.universal-back-button:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.universal-back-button svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Mobile optimization */
+@media (max-width: 640px) {
+  .universal-back-button {
+    padding: 0.75rem;
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .universal-back-button span {
+    display: none;
+  }
+  
+  .universal-back-button svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}
+
+/* Scroll to top button styles */
+.scroll-to-top-button {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  padding: 0.75rem;
+  background-color: rgba(37, 99, 235, 0.9);
+  color: white;
+  border-radius: 9999px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  z-index: 50;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;  /* Fixed width */
+  height: 2.75rem; /* Fixed height */
+}
+
+.scroll-to-top-button:hover {
+  background-color: rgba(29, 78, 216, 0.9);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+}
+
+.scroll-to-top-button:active {
+  transform: translateY(0) scale(1);
+}
+
+.scroll-to-top-button svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke-width: 2.5;
+}
+
+/* Mobile optimization for scroll to top */
+@media (max-width: 640px) {
+  .scroll-to-top-button {
+    bottom: 1rem;
+    right: 1rem;
+    width: 2.5rem;  /* Slightly smaller on mobile */
+    height: 2.5rem;
+  }
+  
+  .scroll-to-top-button svg {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+}
+
+/* Ensure button doesn't overlap with bottom navigation or other fixed elements */
+@media (max-width: 640px) {
+  .has-bottom-nav .scroll-to-top-button {
+    bottom: 5rem; /* Adjust based on your bottom navigation height */
+  }
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-height);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track-color);
+  border-radius: var(--scrollbar-border-radius);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-color);
+  border-radius: var(--scrollbar-border-radius);
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: all 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover-color);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
+}
+
+/* For dark themed sections */
+.dark-scrollbar {
+  --scrollbar-track-color: rgba(17, 24, 39, 0.7);
+  --scrollbar-thumb-color: rgba(99, 102, 241, 0.4);
+  --scrollbar-thumb-hover-color: rgba(99, 102, 241, 0.6);
+}
+
+/* Hide scrollbar while maintaining functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Prevent rubber-band scrolling on iOS */
+.prevent-bounce {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* For Monaco Editor scrollbars */
+.monaco-editor .scrollbar .slider {
+  background: var(--scrollbar-thumb-color) !important;
+  border-radius: var(--scrollbar-border-radius) !important;
+}
+
+.monaco-editor .scrollbar .slider:hover {
+  background: var(--scrollbar-thumb-hover-color) !important;
 }

@@ -170,29 +170,39 @@ export default function Dashboard() {
   return (
     <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 space-y-12"> {/* Removed relative positioning */}
       {/* Header with Back Button and Welcome Message */}
-      <div className="flex items-center gap-4"> {/* Use flex container */}
+      <div className="flex items-center gap-4">
         <button
           onClick={() => router.back()}
-          className="text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700/50 cursor-pointer" /* Added cursor-pointer */
+          className="universal-back-button"
           aria-label="Go back"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth={2} 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
+          <span>Back</span>
         </button>
+        
         {/* Container for welcome messages - handles responsiveness */}
         <div>
           {/* Small Screen Welcome */}
           <div className="block sm:hidden">
-            <p className="text-sm text-gray-400 mb-0.5"> {/* Adjusted margin */}
-              Hi {user?.displayName || 'User'}! <span className="animate-shake">👋</span> {/* Use dynamic name or fallback */}
+            <p className="text-sm text-gray-400 mb-0.5">
+              Hi {user?.displayName || 'User'}! <span className="animate-shake">👋</span>
             </p>
-            <h1 className="text-2xl font-bold text-white"> {/* White text like screenshot */}
+            <h1 className="text-2xl font-bold text-white">
               Welcome Back
             </h1>
           </div>
 
-          {/* Larger Screen Welcome (Modified) */}
+          {/* Larger Screen Welcome */}
           <h1 className="hidden sm:block text-2xl sm:text-4xl font-bold text-gray-300">
             Hi {user?.displayName && <span className="font-semibold text-blue-400">{user.displayName}</span>} <span className="animate-shake">👋</span>, Welcome Back!
           </h1>
@@ -375,11 +385,19 @@ export default function Dashboard() {
       {showScrollButton && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 !right-6 p-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-300 ease-in-out z-50 animate-fade-in cursor-pointer transform hover:scale-105 hover:shadow-xl" /* Added cursor-pointer and hover effects */
+          className="scroll-to-top-button animate-fade-in"
           aria-label="Scroll to top"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth={2} 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <path d="M18 15l-6-6-6 6"/>
           </svg>
         </button>
       )}
