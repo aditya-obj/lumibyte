@@ -16,6 +16,7 @@ export default function AdminQuestionsPage() {
   const [difficulty, setDifficulty] = useState('Easy');
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [questionLink, setQuestionLink] = useState('');
   const router = useRouter();
 
   // Check if user is admin
@@ -81,7 +82,8 @@ export default function AdminQuestionsPage() {
         constraints,
         topic: finalTopic,
         difficulty,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        questionLink
       };
 
       const questionsRef = ref(db, 'public/questions');
@@ -97,6 +99,7 @@ export default function AdminQuestionsPage() {
       setCustomTopic('');
       setShowCustomTopic(false);
       setDifficulty('Easy');
+      setQuestionLink('');
     } catch (error) {
       setError('Failed to add question. Please try again.');
       console.error('Error adding question:', error);
@@ -179,7 +182,7 @@ export default function AdminQuestionsPage() {
             <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-700/50">
               <div className="p-6 space-y-6">
                 {/* Title Input */}
-                <div>
+                <div className="w-full">
                   <label className="block text-sm font-medium text-gray-300 mb-2">Question Title</label>
                   <input
                     type="text"
@@ -190,6 +193,20 @@ export default function AdminQuestionsPage() {
                       focus:border-transparent transition-all duration-200 hover:bg-gray-900/70"
                     placeholder="Enter a descriptive title..."
                     required
+                  />
+                </div>
+
+                {/* Question Link */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Question Link</label>
+                  <input
+                    type="url"
+                    value={questionLink}
+                    onChange={(e) => setQuestionLink(e.target.value)}
+                    className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 text-gray-100 
+                      placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 
+                      focus:border-transparent transition-all duration-200 hover:bg-gray-900/70"
+                    placeholder="Enter the question link (e.g., LeetCode, HackerRank)..."
                   />
                 </div>
 
@@ -230,6 +247,33 @@ export default function AdminQuestionsPage() {
                     />
                   )}
                 </div>
+
+                {/* Difficulty Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-3">Difficulty</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {['Easy', 'Medium', 'Hard'].map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setDifficulty(d)}
+                        className={`
+                          py-3 rounded-xl text-sm font-medium transition-all duration-300
+                          ${difficulty === d
+                            ? d === 'Easy'
+                              ? 'bg-green-500/20 text-green-400 ring-2 ring-green-500/50'
+                              : d === 'Medium'
+                              ? 'bg-yellow-500/20 text-yellow-400 ring-2 ring-yellow-500/50'
+                              : 'bg-red-500/20 text-red-400 ring-2 ring-red-500/50'
+                            : 'bg-gray-900/50 text-gray-400 hover:bg-gray-800/70 hover:text-gray-300'
+                          }
+                        `}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -266,20 +310,25 @@ export default function AdminQuestionsPage() {
             <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-700/50">
               <div className="p-6">
                 <label className="block text-sm font-medium text-gray-300 mb-2">Examples</label>
-                <textarea
-                  value={examples}
-                  onChange={(e) => setExamples(e.target.value)}
-                  className="w-full h-[200px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 
-                    text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 
-                    focus:ring-purple-500/50 focus:border-transparent resize-none
-                    transition-all duration-200 hover:bg-gray-900/70
-                    hover:border-gray-600 backdrop-blur-sm
-                    shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]
-                    hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]
-                    scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900/50"
-                  placeholder="Input: nums = [1, 2, 3]&#10;Output: [1, 2, 3]&#10;Explanation: Example details..."
-                  required
-                />
+                <div className="relative">
+                  <textarea
+                    value={examples}
+                    onChange={(e) => setExamples(e.target.value)}
+                    className="w-full h-[200px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 
+                      text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 
+                      focus:ring-purple-500/50 focus:border-transparent resize-none
+                      transition-all duration-200 hover:bg-gray-900/70
+                      hover:border-gray-600 backdrop-blur-sm
+                      shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]
+                      hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]
+                      scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900/50"
+                    placeholder="Input: nums = [1, 2, 3]&#10;Output: [1, 2, 3]&#10;Explanation: Example details..."
+                    required
+                  />
+                  <div className="absolute right-3 bottom-3 px-2 py-1 bg-gray-900/50 rounded-md text-xs text-gray-500">
+                    Markdown supported
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -287,48 +336,24 @@ export default function AdminQuestionsPage() {
             <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-700/50">
               <div className="p-6">
                 <label className="block text-sm font-medium text-gray-300 mb-2">Constraints</label>
-                <textarea
-                  value={constraints}
-                  onChange={(e) => setConstraints(e.target.value)}
-                  className="w-full h-[150px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 
-                    text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 
-                    focus:ring-purple-500/50 focus:border-transparent resize-none
-                    transition-all duration-200 hover:bg-gray-900/70
-                    hover:border-gray-600 backdrop-blur-sm
-                    shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]
-                    hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]
-                    scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900/50"
-                  placeholder="• 1 <= nums.length <= 10^5&#10;• -10^9 <= nums[i] <= 10^9"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Difficulty Selection */}
-            <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-700/50">
-              <div className="p-6">
-                <label className="block text-sm font-medium text-gray-300 mb-4">Difficulty Level</label>
-                <div className="grid grid-cols-3 gap-3">
-                  {['Easy', 'Medium', 'Hard'].map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => setDifficulty(d)}
-                      className={`
-                        py-3 rounded-xl text-sm font-medium transition-all duration-300
-                        ${difficulty === d
-                          ? d === 'Easy'
-                            ? 'bg-green-500/20 text-green-400 ring-2 ring-green-500/50'
-                            : d === 'Medium'
-                            ? 'bg-yellow-500/20 text-yellow-400 ring-2 ring-yellow-500/50'
-                            : 'bg-red-500/20 text-red-400 ring-2 ring-red-500/50'
-                          : 'bg-gray-900/50 text-gray-400 hover:bg-gray-800/70 hover:text-gray-300'
-                        }
-                      `}
-                    >
-                      {d}
-                    </button>
-                  ))}
+                <div className="relative">
+                  <textarea
+                    value={constraints}
+                    onChange={(e) => setConstraints(e.target.value)}
+                    className="w-full h-[150px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 
+                      text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 
+                      focus:ring-purple-500/50 focus:border-transparent resize-none
+                      transition-all duration-200 hover:bg-gray-900/70
+                      hover:border-gray-600 backdrop-blur-sm
+                      shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]
+                      hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]
+                      scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900/50"
+                    placeholder="• 1 <= nums.length <= 10^5&#10;• -10^9 <= nums[i] <= 10^9"
+                    required
+                  />
+                  <div className="absolute right-3 bottom-3 px-2 py-1 bg-gray-900/50 rounded-md text-xs text-gray-500">
+                    Markdown supported
+                  </div>
                 </div>
               </div>
             </div>
