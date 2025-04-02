@@ -5,6 +5,38 @@ import { get, push, ref, set } from 'firebase/database';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+// Notification component
+const Notification = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className={`fixed top-4 right-4 z-50 max-w-md px-4 py-3 rounded-lg shadow-lg transition-all duration-300 transform translate-x-0 ${type === 'error' ? 'bg-red-500/90' : 'bg-green-500/90'}`}>
+      <div className="flex items-center space-x-3">
+        {type === 'error' ? (
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        ) : (
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+        <p className="text-white font-medium">{message}</p>
+        <button onClick={onClose} className="text-white hover:text-gray-200">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export default function QuestionsPage() {
   const router = useRouter(); // Initialize router
   const [title, setTitle] = useState('');
@@ -16,6 +48,9 @@ export default function QuestionsPage() {
   const [customTopic, setCustomTopic] = useState('');
   const [topics, setTopics] = useState(['Others']);
   const [questionLink, setQuestionLink] = useState('');
+
+  // Notification state
+  const [notification, setNotification] = useState({ show: false, message: '', type: 'error' });
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -30,7 +65,7 @@ export default function QuestionsPage() {
         ]).then(([publicSnapshot, userSnapshot]) => {
           const publicTopics = publicSnapshot.exists() ? Object.values(publicSnapshot.val()) : [];
           const userTopics = userSnapshot.exists() ? Object.values(userSnapshot.val()) : [];
-          
+
           // Merge topics and remove duplicates
           const allTopics = [...new Set([...publicTopics, ...userTopics, 'Others'])].sort((a, b) => {
             if (a === 'Others') return 1; // Keep 'Others' at the end
@@ -49,54 +84,129 @@ export default function QuestionsPage() {
     return () => unsubscribe();
   }, []);
   const [difficulty, setDifficulty] = useState('Easy');
-  const [startCode, setStartCode] = useState('def solution():\n    # Write your code here\n    pass');
-  const [solutions, setSolutions] = useState([{
-    title: '',
-    code: 'def solution():\n    # Write your solution here\n    pass',
-    timeComplexity: '',
-    approach: ''
-  }]);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  // Programming language selection - fixed set of languages
+  const [availableLanguages] = useState(['python', 'c', 'cpp', 'java']);
+  const [selectedLanguage, setSelectedLanguage] = useState('python');
 
+  // Empty code structure with language-specific defaults - all languages are mandatory
+  const [emptyCode, setEmptyCode] = useState({
+    python: 'def solution():\n    # Write your code here\n    pass',
+    c: '#include <stdio.h>\n\nint main() {\n    // Write your code here\n    return 0;\n}',
+    cpp: '#include <iostream>\n\nint main() {\n    // Write your code here\n    return 0;\n}',
+    java: 'class Solution {\n    public static void main(String[] args) {\n        // Write your code here\n    }\n}'
+  });
+
+  // Solutions organized by language
+  const [solutions, setSolutions] = useState({
+    python: [{
+      language: 'python', // Track language for each solution
+      title: '',
+      code: 'def solution():\n    # Write your solution here\n    pass',
+      timeComplexity: '',
+      approach: ''
+    }]
+  });
+  // Removed old error and success states in favor of notification system
+
+  // Get default solution template based on language
+  const getDefaultSolution = (language) => {
+    const templates = {
+      python: 'def solution():\n    # Write your solution here\n    pass',
+      c: '#include <stdio.h>\n\nint main() {\n    // Write your solution here\n    return 0;\n}',
+      cpp: '#include <iostream>\n\nint main() {\n    // Write your solution here\n    return 0;\n}',
+      java: 'class Solution {\n    public static void main(String[] args) {\n        // Write your code here\n    }\n}'
+    };
+    return {
+      language: language, // Include the language property
+      title: '',
+      code: templates[language] || templates.python,
+      timeComplexity: '',
+      approach: ''
+    };
+  };
+
+  // Handle language tab change
+  const handleLanguageTabChange = (language) => {
+    setSelectedLanguage(language);
+
+    // Initialize solutions for the selected language if they don't exist
+    if (!solutions[language]) {
+      setSolutions({
+        ...solutions,
+        [language]: [getDefaultSolution(language)]
+      });
+    }
+  };
+
+  // Add a solution for the current language
   const addSolution = () => {
-    setSolutions([...solutions, {
-      title: '',
-      code: 'def solution():\n    # Write your solution here\n    pass',
-      timeComplexity: '',
-      approach: ''
-    }]);
+    // Get solutions for the current language
+    const currentLangSolutions = solutions[selectedLanguage] || [];
+
+    // Check if the last solution has required fields filled
+    const canAddSolution = currentLangSolutions.length === 0 ||
+      (currentLangSolutions[currentLangSolutions.length - 1].title.trim() &&
+       currentLangSolutions[currentLangSolutions.length - 1].timeComplexity.trim());
+
+    if (!canAddSolution) {
+      // Show notification instead of setting error
+      setNotification({
+        show: true,
+        message: 'Please complete the required fields (Title, Time Complexity) in the current solution before adding a new one.',
+        type: 'error'
+      });
+      return;
+    }
+
+    // Add a new solution with the current language
+    setSolutions({
+      ...solutions,
+      [selectedLanguage]: [...currentLangSolutions, getDefaultSolution(selectedLanguage)]
+    });
   };
 
+  // Remove a solution for the current language
   const removeSolution = (index) => {
-    const newSolutions = solutions.filter((_, i) => i !== index);
-    setSolutions(newSolutions.length > 0 ? newSolutions : [{
-      title: '',
-      code: 'def solution():\n    # Write your solution here\n    pass',
-      timeComplexity: '',
-      approach: ''
-    }]);
+    const currentLangSolutions = [...(solutions[selectedLanguage] || [])];
+    const newSolutions = currentLangSolutions.filter((_, i) => i !== index);
+
+    setSolutions({
+      ...solutions,
+      [selectedLanguage]: newSolutions.length > 0 ? newSolutions : [getDefaultSolution(selectedLanguage)]
+    });
   };
 
+  // Update a solution for the current language
   const updateSolution = (index, field, value) => {
-    const newSolutions = [...solutions];
-    newSolutions[index][field] = value;
-    setSolutions(newSolutions);
+    const currentLangSolutions = [...(solutions[selectedLanguage] || [])];
+    if (currentLangSolutions[index]) {
+      currentLangSolutions[index][field] = value;
+      setSolutions({
+        ...solutions,
+        [selectedLanguage]: currentLangSolutions
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess(false);
 
     if (!auth.currentUser) {
-      setError('Please login to add questions');
+      setNotification({
+        show: true,
+        message: 'Please login to add questions',
+        type: 'error'
+      });
       return;
     }
 
     const finalTopic = showCustomTopic ? customTopic : topic;
     if (!finalTopic) {
-      setError('Please select or enter a topic.');
+      setNotification({
+        show: true,
+        message: 'Please select or enter a topic.',
+        type: 'error'
+      });
       return;
     }
 
@@ -122,24 +232,74 @@ export default function QuestionsPage() {
     }
 
     try {
-      // Filter out empty solutions
-      const validSolutions = solutions.filter(solution => 
-        solution.title.trim() || 
-        solution.code.trim() !== 'def solution():\n    # Write your solution here\n    pass' ||
-        solution.timeComplexity.trim() ||
-        solution.approach.trim()
-      );
+      // Process solutions by language
+      const processedSolutions = {};
+      let hasIncompleteSolution = false;
 
-      // Validate solutions if any are provided
-      const hasIncompleteSolution = validSolutions.some(solution => 
-        (solution.title || solution.code || solution.timeComplexity) && 
-        (!solution.title.trim() || !solution.code.trim() || !solution.timeComplexity.trim())
-      );
+      // First, reorganize solutions by their language property
+      const solutionsByLanguage = {};
+
+      // Go through each language tab
+      Object.keys(solutions).forEach(langTab => {
+        // Go through each solution in this tab
+        solutions[langTab].forEach(solution => {
+          // Use the solution's language property (which might be different from the tab)
+          const lang = solution.language;
+
+          if (!solutionsByLanguage[lang]) {
+            solutionsByLanguage[lang] = [];
+          }
+
+          solutionsByLanguage[lang].push(solution);
+        });
+      });
+
+      // Now process the reorganized solutions
+      Object.keys(solutionsByLanguage).forEach(language => {
+        // Skip languages with no solutions
+        if (!solutionsByLanguage[language] || solutionsByLanguage[language].length === 0) return;
+
+        // Get default code template for this language
+        const defaultTemplate = getDefaultSolution(language).code;
+
+        // Filter out empty solutions for this language
+        const validSolutionsForLang = solutionsByLanguage[language].filter(solution =>
+          solution.title.trim() ||
+          solution.code.trim() !== defaultTemplate ||
+          solution.timeComplexity.trim() ||
+          solution.approach.trim()
+        );
+
+        // Check for incomplete solutions
+        const hasIncompleteForLang = validSolutionsForLang.some(solution =>
+          (solution.title || solution.code || solution.timeComplexity) &&
+          (!solution.title.trim() || !solution.code.trim() || !solution.timeComplexity.trim())
+        );
+
+        if (hasIncompleteForLang) {
+          hasIncompleteSolution = true;
+        }
+
+        // Add valid solutions to processed solutions
+        if (validSolutionsForLang.length > 0) {
+          processedSolutions[language] = validSolutionsForLang;
+        }
+      });
 
       if (hasIncompleteSolution) {
-        setError('Please complete all required fields (Title, Code, Time Complexity) for each solution or remove incomplete solutions');
+        setNotification({
+          show: true,
+          message: 'Please complete all required fields (Title, Code, Time Complexity) for each solution or remove incomplete solutions',
+          type: 'error'
+        });
         return;
       }
+
+      // Create empty_code structure
+      const emptyCodeData = {};
+      Object.keys(emptyCode).forEach(lang => {
+        emptyCodeData[lang] = emptyCode[lang];
+      });
 
       const questionData = {
         title,
@@ -149,20 +309,26 @@ export default function QuestionsPage() {
         constraints,
         topic: finalTopic,
         difficulty,
-        empty_code: startCode,
+        empty_code: emptyCodeData,
         createdAt: Date.now(),
         userId: auth.currentUser.uid
       };
 
       // Only add solutions to questionData if there are valid solutions
-      if (validSolutions.length > 0) {
-        questionData.solutions = validSolutions;
+      if (Object.keys(processedSolutions).length > 0) {
+        questionData.solutions = processedSolutions;
       }
 
       const userQuestionsRef = ref(db, `users/${auth.currentUser.uid}/questions`);
       await push(userQuestionsRef, questionData);
 
-      setSuccess(true);
+      // Show success notification
+      setNotification({
+        show: true,
+        message: 'Question added successfully!',
+        type: 'success'
+      });
+
       // Reset form fields
       setTitle('');
       setDescription('');
@@ -172,20 +338,27 @@ export default function QuestionsPage() {
       setCustomTopic('');
       setShowCustomTopic(false);
       setDifficulty('Easy');
-      setStartCode('def solution():\n    # Write your code here\n    pass');
-      setSolutions([{
-        title: '',
-        code: 'def solution():\n    # Write your solution here\n    pass',
-        timeComplexity: '',
-        approach: ''
-      }]);
+      setSelectedLanguage('python');
+      // Reset solutions to only have Python with an empty solution
+      setSolutions({
+        python: [{
+          language: 'python',
+          title: '',
+          code: 'def solution():\n    # Write your solution here\n    pass',
+          timeComplexity: '',
+          approach: ''
+        }]
+      });
       setQuestionLink('');
 
       window.scrollTo(0, 0);
-      setTimeout(() => setSuccess(false), 3000);
 
     } catch (err) {
-      setError('Failed to add question. Please try again.');
+      setNotification({
+        show: true,
+        message: 'Failed to add question. Please try again.',
+        type: 'error'
+      });
       console.error('Error adding question:', err);
     }
   };
@@ -193,6 +366,14 @@ export default function QuestionsPage() {
   return (
     // Adjusted padding for better spacing on different screens
     <div className="min-h-screen p-4 sm:p-6 md:p-8 bg-gray-900 text-gray-200">
+      {/* Show notification if it's active */}
+      {notification.show && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification({ ...notification, show: false })}
+        />
+      )}
       {/* Header section */}
       <div className="max-w-7xl mx-auto mb-8">
         <div className="flex items-center gap-4 mb-4">
@@ -201,13 +382,13 @@ export default function QuestionsPage() {
             className="universal-back-button"
             aria-label="Go back"
           >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
               strokeWidth={2}
-              strokeLinecap="round" 
+              strokeLinecap="round"
               strokeLinejoin="round"
             >
               <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -237,8 +418,8 @@ export default function QuestionsPage() {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 text-gray-100 
-                  placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 
+                className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 text-gray-100
+                  placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50
                   focus:border-transparent transition-all duration-200 hover:bg-gray-900/70"
                 placeholder="Enter a descriptive title..."
                 required
@@ -251,8 +432,8 @@ export default function QuestionsPage() {
                 type="url"
                 value={questionLink}
                 onChange={(e) => setQuestionLink(e.target.value)}
-                className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 text-gray-100 
-                  placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 
+                className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 text-gray-100
+                  placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50
                   focus:border-transparent transition-all duration-200 hover:bg-gray-900/70"
                 placeholder="Enter question link (e.g., LeetCode, HackerRank)..."
               />
@@ -272,7 +453,7 @@ export default function QuestionsPage() {
                     }}
                     className={`
                       px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300
-                      ${topic === t 
+                      ${topic === t
                         ? 'bg-purple-500/20 text-purple-300 ring-2 ring-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
                         : 'bg-gray-900/50 text-gray-400 hover:bg-gray-800/70 hover:text-gray-300'
                       }
@@ -290,8 +471,8 @@ export default function QuestionsPage() {
                     type="text"
                     value={customTopic}
                     onChange={(e) => setCustomTopic(e.target.value)}
-                    className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 text-gray-100 
-                      placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 
+                    className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 text-gray-100
+                      placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50
                       focus:border-transparent transition-all duration-200 hover:bg-gray-900/70"
                     placeholder="Enter custom topic..."
                     required={showCustomTopic}
@@ -337,8 +518,8 @@ export default function QuestionsPage() {
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full h-[250px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 
-                  text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 
+                className="w-full h-[250px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3
+                  text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2
                   focus:ring-purple-500/50 focus:border-transparent resize-none
                   transition-all duration-200 hover:bg-gray-900/70
                   hover:border-gray-600 backdrop-blur-sm
@@ -363,8 +544,8 @@ export default function QuestionsPage() {
               <textarea
                 value={examples}
                 onChange={(e) => setExamples(e.target.value)}
-                className="w-full h-[200px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 
-                  text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 
+                className="w-full h-[200px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3
+                  text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2
                   focus:ring-purple-500/50 focus:border-transparent resize-none
                   transition-all duration-200 hover:bg-gray-900/70
                   hover:border-gray-600 backdrop-blur-sm
@@ -389,8 +570,8 @@ export default function QuestionsPage() {
               <textarea
                 value={constraints}
                 onChange={(e) => setConstraints(e.target.value)}
-                className="w-full h-[150px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 
-                  text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2 
+                className="w-full h-[150px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3
+                  text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2
                   focus:ring-purple-500/50 focus:border-transparent resize-none
                   transition-all duration-200 hover:bg-gray-900/70
                   hover:border-gray-600 backdrop-blur-sm
@@ -407,16 +588,44 @@ export default function QuestionsPage() {
           </div>
         </div>
 
-        {/* Starter Code Section */}
+        {/* Starter Code Section - All languages are mandatory */}
         <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-700/50">
           <div className="p-6">
-            <label className="block text-sm font-medium text-gray-300 mb-2">Starter Code</label>
+            <h3 className="text-lg font-medium text-gray-300 mb-4">Starter Code</h3>
+            <p className="text-sm text-gray-400 mb-6">Provide starter code for all supported languages</p>
+
+            {/* Tabs for each language */}
+            <div className="mb-4 border-b border-gray-700">
+              <div className="flex overflow-x-auto">
+                {availableLanguages.map(lang => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => handleLanguageTabChange(lang)}
+                    className={`px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap
+                      ${selectedLanguage === lang ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
+                  >
+                    {lang.charAt(0).toUpperCase() + lang.slice(1)}
+                    {selectedLanguage === lang && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Editor for the selected language */}
             <div className="h-[200px] rounded-xl overflow-hidden border border-gray-700">
               <Editor
                 height="100%"
-                defaultLanguage="python"
-                value={startCode}
-                onChange={setStartCode}
+                defaultLanguage={selectedLanguage}
+                value={emptyCode[selectedLanguage]}
+                onChange={(value) => {
+                  setEmptyCode({
+                    ...emptyCode,
+                    [selectedLanguage]: value
+                  });
+                }}
                 theme="vs-dark"
                 options={{
                   minimap: { enabled: false },
@@ -433,37 +642,78 @@ export default function QuestionsPage() {
         {/* Solutions Section */}
         <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-700/50">
           <div className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium text-gray-300">
-                Solutions (Optional)
-              </h3>
-              <button
-                type="button"
-                onClick={addSolution}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/20 text-purple-300 
-                  rounded-xl transition-all duration-300 hover:bg-purple-500/30"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Add Solution
-              </button>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-300">
+                  Solutions (Optional)
+                </h3>
+
+                <button
+                  type="button"
+                  onClick={addSolution}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/20 text-purple-300
+                    rounded-xl transition-all duration-300 hover:bg-purple-500/30"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Solution
+                </button>
+              </div>
+
+              {/* Tabs for each language */}
+              <div className="mb-4 border-b border-gray-700">
+                <div className="flex overflow-x-auto">
+                  {availableLanguages.map(lang => (
+                    <button
+                      key={lang}
+                      type="button"
+                      onClick={() => handleLanguageTabChange(lang)}
+                      className={`px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap
+                        ${selectedLanguage === lang ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
+                    >
+                      {lang.charAt(0).toUpperCase() + lang.slice(1)}
+                      {selectedLanguage === lang && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {solutions.map((solution, index) => (
+            {(solutions[selectedLanguage] || []).map((solution, index) => (
               <div key={index} className="mb-8 p-6 bg-gray-800/30 rounded-xl">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium text-purple-300">Solution {index + 1}</h3>
-                  {/* Show remove button only if there's more than one solution AND it's not the first solution */}
-                  {solutions.length > 1 && index > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => removeSolution(index)}
-                      className="text-red-400 hover:text-red-300 transition-colors"
+                <div className="flex flex-col space-y-4 mb-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium text-purple-300">Solution {index + 1}</h3>
+                    {/* Show remove button only if there's more than one solution */}
+                    {(solutions[selectedLanguage] || []).length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeSolution(index)}
+                        className="text-red-400 hover:text-red-300 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Language selector for this specific solution */}
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-400">Language:</label>
+                    <select
+                      value={solution.language}
+                      onChange={(e) => updateSolution(index, 'language', e.target.value)}
+                      className="bg-gray-800/50 text-white text-sm rounded-md px-3 py-1.5 appearance-none focus:outline-none focus:ring-1 focus:ring-purple-500 border border-gray-700"
                     >
-                      Remove
-                    </button>
-                  )}
+                      {availableLanguages.map(lang => (
+                        <option key={lang} value={lang}>
+                          {lang.charAt(0).toUpperCase() + lang.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 {/* Title and Time Complexity in one line */}
@@ -515,7 +765,7 @@ export default function QuestionsPage() {
                   <div className="h-[300px] rounded-lg overflow-hidden">
                     <Editor
                       height="100%"
-                      defaultLanguage="python"
+                      defaultLanguage={selectedLanguage}
                       value={solution.code}
                       onChange={(value) => updateSolution(index, 'code', value)}
                       theme="vs-dark"
@@ -537,26 +787,14 @@ export default function QuestionsPage() {
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl 
-            transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/30 hover:-translate-y-1 
+          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl
+            transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/30 hover:-translate-y-1
             font-semibold text-lg"
         >
           Add Question
         </button>
 
-        {/* Error Message */}
-        {error && (
-          <div className="text-red-400 text-sm mt-2">
-            {error}
-          </div>
-        )}
-
-        {/* Success Message */}
-        {success && (
-          <div className="text-green-400 text-sm mt-2">
-            Question added successfully!
-          </div>
-        )}
+        {/* Notifications are now shown at the top of the page */}
       </form>
     </div>
   );

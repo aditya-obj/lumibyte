@@ -11,11 +11,11 @@ import React, { useEffect, useState } from 'react';
 // Add the splitExamples function at the top level
 const splitExamples = (examples) => {
   if (!examples) return [];
-  
+
   // Match "Example N:" pattern and remove it from the content
   const matches = examples.match(/Example \d+:[\s\S]*?(?=Example \d+:|$)/g) || [];
-  
-  return matches.map(example => 
+
+  return matches.map(example =>
     example.replace(/^Example \d+:\s*/, '').trim() // Remove the "Example N:" prefix
   );
 };
@@ -56,10 +56,10 @@ const renderContent = (content) => {
       );
     }
     return (
-      <div 
+      <div
         key={index}
         className="question-content"
-        dangerouslySetInnerHTML={{ 
+        dangerouslySetInnerHTML={{
           __html: marked(part, {
             highlight: (code, lang) => {
               return Prism.highlight(code, Prism.languages[lang || 'text'], lang || 'text');
@@ -74,7 +74,7 @@ const renderContent = (content) => {
 // Add this helper function to format constraints
 const formatConstraints = (constraints) => {
   if (!constraints) return '';
-  
+
   // Add line breaks between constraints if they don't already exist
   return constraints
     .replace(/•/g, '\n•') // Add line break before bullet points
@@ -88,7 +88,8 @@ export default function QuestionPage({ params }) {
   const unwrappedParams = React.use(params);
   // Add this line with other state declarations
   const [mobileView, setMobileView] = useState('description'); // 'description' or 'editor'
-  
+  const [editorReady, setEditorReady] = useState(false);
+
   // Existing state declarations
   const [activeLeftTab, setActiveLeftTab] = useState(0); // 0 for Question, 1+ for solutions
   const [question, setQuestion] = useState(null);
@@ -102,6 +103,12 @@ export default function QuestionPage({ params }) {
   const router = useRouter();
   const [previousPath, setPreviousPath] = useState('/');
   const [blurredSolutions, setBlurredSolutions] = useState(new Set());
+
+  // Language selection states
+  const [availableSolutionLanguages, setAvailableSolutionLanguages] = useState(['python']);
+  const [selectedSolutionLanguage, setSelectedSolutionLanguage] = useState('python');
+  const [availableCodeLanguages, setAvailableCodeLanguages] = useState(['python']);
+  const [selectedCodeLanguage, setSelectedCodeLanguage] = useState('python');
 
   // Add this function to handle blur toggling
   const toggleSolutionBlur = (solutionIndex) => {
@@ -131,6 +138,19 @@ export default function QuestionPage({ params }) {
   // Handler for the new left tabs
   const handleLeftTabChange = (index) => {
     setActiveLeftTab(index);
+  };
+
+  // Handler for solution language selection
+  const handleSolutionLanguageChange = (language) => {
+    setSelectedSolutionLanguage(language);
+  };
+
+  // Handler for code language selection
+  const handleCodeLanguageChange = (language) => {
+    setSelectedCodeLanguage(language);
+    if (question?.empty_code?.[language]) {
+      setUserSolutions([{ code: question.empty_code[language], timeComplexity: '' }]);
+    }
   };
 
   // Reveal handler adapted for new tab structure
@@ -199,8 +219,32 @@ export default function QuestionPage({ params }) {
 
   useEffect(() => {
     if (question) {
-      // Initialize with empty code structure from the question data
-      setUserSolutions([{ code: question.empty_code || '', timeComplexity: '' }]);
+      // Detect available languages for solutions
+      if (question.solutions) {
+        const solutionLangs = Object.keys(question.solutions);
+        if (solutionLangs.length > 0) {
+          setAvailableSolutionLanguages(solutionLangs);
+          setSelectedSolutionLanguage(solutionLangs[0]);
+        }
+      }
+
+      // Detect available languages for empty code
+      if (question.empty_code) {
+        const codeLangs = Object.keys(question.empty_code);
+        if (codeLangs.length > 0) {
+          setAvailableCodeLanguages(codeLangs);
+          setSelectedCodeLanguage(codeLangs[0]);
+
+          // Initialize with empty code structure from the question data
+          const emptyCode = question.empty_code[codeLangs[0]] || '';
+          setUserSolutions([{ code: emptyCode, timeComplexity: '' }]);
+        } else {
+          // Fallback for old structure
+          setUserSolutions([{ code: question.empty_code || '', timeComplexity: '' }]);
+        }
+      } else {
+        setUserSolutions([{ code: '', timeComplexity: '' }]);
+      }
     }
   }, [question]);
 
@@ -284,13 +328,13 @@ export default function QuestionPage({ params }) {
               className="universal-back-button"
               aria-label="Go back"
             >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth={2} 
-                strokeLinecap="round" 
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
                 strokeLinejoin="round"
               >
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -301,11 +345,11 @@ export default function QuestionPage({ params }) {
               {question?.title}
             </h1>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {/* Mobile View/Edit Toggle */}
             <div className="lg:hidden">
-              <button 
+              <button
                 onClick={() => setMobileView(prev => prev === 'description' ? 'editor' : 'description')}
                 className="px-3 py-1.5 bg-gray-800 text-gray-300 rounded-lg text-sm font-medium cursor-pointer"
               >
@@ -314,7 +358,7 @@ export default function QuestionPage({ params }) {
             </div>
 
             {/* Edit Button */}
-            <button 
+            <button
               onClick={() => router.push(`/edit/question?id=${question.id}`)}
               className="px-3 py-1.5 bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer"
             >
@@ -325,11 +369,11 @@ export default function QuestionPage({ params }) {
             </button>
 
             {/* Mark as Revised Button */}
-            <button 
+            <button
               onClick={handleRevision}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer
-                ${question?.lastRevised 
-                  ? 'bg-purple-500/10 text-purple-400' 
+                ${question?.lastRevised
+                  ? 'bg-purple-500/10 text-purple-400'
                   : 'bg-green-500/10 text-green-400'}`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -371,16 +415,22 @@ export default function QuestionPage({ params }) {
         {/* Mobile Layout */}
         <div className="lg:hidden h-[calc(100vh-8rem)]">
           {mobileView === 'description' ? (
-            <MobileDescription 
+            <MobileDescription
               question={question}
               activeLeftTab={activeLeftTab}
               handleLeftTabChange={handleLeftTabChange}
               renderContent={renderContent}
+              selectedSolutionLanguage={selectedSolutionLanguage}
+              availableSolutionLanguages={availableSolutionLanguages}
+              handleSolutionLanguageChange={handleSolutionLanguageChange}
             />
           ) : (
             <MobileEditor
               userSolutions={userSolutions}
               activeUserSolution={activeUserSolution}
+              selectedCodeLanguage={selectedCodeLanguage}
+              availableCodeLanguages={availableCodeLanguages}
+              handleCodeLanguageChange={handleCodeLanguageChange}
             />
           )}
         </div>
@@ -389,30 +439,59 @@ export default function QuestionPage({ params }) {
         <div className="hidden lg:grid lg:grid-cols-2 gap-4 p-4">
           {/* Left Column - Problem Description */}
           <div className="h-[calc(100vh-10rem)] flex flex-col bg-[#1a1a1a] rounded-xl overflow-hidden">
-            <div className="border-b border-[#2a2a2a] flex overflow-x-auto custom-scrollbar">
-              <button
-                onClick={() => handleLeftTabChange(0)}
-                className={`px-4 sm:px-6 py-3 text-sm font-medium transition-colors relative whitespace-nowrap
-                  ${activeLeftTab === 0 ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
-              >
-                Description
-                {activeLeftTab === 0 && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
-                )}
-              </button>
-              {question?.solutions?.map((solution, index) => (
+            <div className="border-b border-[#2a2a2a] flex flex-col">
+              {/* Language selector */}
+              {availableSolutionLanguages.length > 1 && (
+                <div className="px-4 py-2 flex items-center gap-2 border-b border-[#2a2a2a]">
+                  <span className="text-sm text-gray-400">Language:</span>
+                  <div className="relative">
+                    <select
+                      value={selectedSolutionLanguage}
+                      onChange={(e) => handleSolutionLanguageChange(e.target.value)}
+                      className="bg-[#2a2a2a] text-white text-sm rounded-md px-3 py-1 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      {availableSolutionLanguages.map(lang => (
+                        <option key={lang} value={lang}>
+                          {lang.charAt(0).toUpperCase() + lang.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tabs */}
+              <div className="flex overflow-x-auto custom-scrollbar">
                 <button
-                  key={index + 1}
-                  onClick={() => handleLeftTabChange(index + 1)}
+                  onClick={() => handleLeftTabChange(0)}
                   className={`px-4 sm:px-6 py-3 text-sm font-medium transition-colors relative whitespace-nowrap
-                    ${activeLeftTab === index + 1 ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
+                    ${activeLeftTab === 0 ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
                 >
-                  {solution.title || `Solution ${index + 1}`}
-                  {activeLeftTab === index + 1 && (
+                  Description
+                  {activeLeftTab === 0 && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
                   )}
                 </button>
-              ))}
+                {question?.solutions?.[selectedSolutionLanguage] ?
+                  Object.keys(question.solutions[selectedSolutionLanguage]).map((key, index) => (
+                  <button
+                    key={index + 1}
+                    onClick={() => handleLeftTabChange(index + 1)}
+                    className={`px-4 sm:px-6 py-3 text-sm font-medium transition-colors relative whitespace-nowrap
+                      ${activeLeftTab === index + 1 ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
+                  >
+                    {question.solutions[selectedSolutionLanguage][key].title || `Solution ${index + 1}`}
+                    {activeLeftTab === index + 1 && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                    )}
+                  </button>
+                )) : null}
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
@@ -424,7 +503,7 @@ export default function QuestionPage({ params }) {
                       <h3 className="text-lg font-medium text-white mb-4">Problem Description</h3>
                       {renderContent(question?.description)}
                     </div>
-                    
+
                     {/* Examples */}
                     <div>
                       <h3 className="text-lg font-medium text-white mb-4">Examples</h3>
@@ -449,11 +528,16 @@ export default function QuestionPage({ params }) {
                 </div>
               ) : (
                 <div className="prose prose-invert max-w-none">
-                  {question?.solutions?.[activeLeftTab - 1] && (
+                  {question?.solutions?.[selectedSolutionLanguage] && (() => {
+                    const solutionKeys = Object.keys(question.solutions[selectedSolutionLanguage]);
+                    if (solutionKeys.length >= activeLeftTab) {
+                      const key = solutionKeys[activeLeftTab - 1];
+                      const solution = question.solutions[selectedSolutionLanguage][key];
+                      return (
                     <>
                       <div className="mb-6">
                         <h4 className="text-base sm:text-lg font-medium text-white mb-3">Explanation</h4>
-                        {renderContent(question.solutions[activeLeftTab - 1].explanation)}
+                        {renderContent(solution.explanation)}
                       </div>
                       <div>
                         <div className="flex items-center justify-between mb-3">
@@ -478,8 +562,8 @@ export default function QuestionPage({ params }) {
                         <div className={`h-[300px] bg-[#282c34] rounded-lg overflow-hidden relative ${blurredSolutions.has(activeLeftTab - 1) ? 'select-none' : ''}`}>
                           <Editor
                             height="100%"
-                            value={question.solutions[activeLeftTab - 1].code}
-                            language="python"
+                            value={solution.code}
+                            language={selectedSolutionLanguage}
                             theme="vs-dark"
                             options={{
                               fontSize: 14,
@@ -493,7 +577,7 @@ export default function QuestionPage({ params }) {
                             }}
                           />
                           {blurredSolutions.has(activeLeftTab - 1) && (
-                            <div 
+                            <div
                               className="absolute inset-0 backdrop-blur-md bg-gray-800/30 flex items-center justify-center cursor-pointer"
                               onClick={() => toggleSolutionBlur(activeLeftTab - 1)}
                             >
@@ -509,7 +593,10 @@ export default function QuestionPage({ params }) {
                         </div>
                       </div>
                     </>
-                  )}
+                    );
+                  }
+                  return null;
+                })()}
                 </div>
               )}
             </div>
@@ -517,17 +604,45 @@ export default function QuestionPage({ params }) {
 
           {/* Right Column - Code Editor */}
           <div className="h-[calc(100vh-10rem)] bg-[#1a1a1a] rounded-xl overflow-hidden flex flex-col">
-            <div className="border-b border-[#2a2a2a] px-4 sm:px-6 py-3 flex items-center justify-between">
-              <h2 className="text-white font-medium text-sm sm:text-base">Your Solution</h2>
-              <button className="px-3 sm:px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-md transition-colors cursor-pointer">
-                Submit
-              </button>
+            <div className="border-b border-[#2a2a2a] flex flex-col">
+              <div className="px-4 sm:px-6 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-white font-medium text-sm sm:text-base">Your Solution</h2>
+
+                  {/* Language selector for code editor */}
+                  {availableCodeLanguages.length > 1 && (
+                    <div className="relative">
+                      <select
+                        value={selectedCodeLanguage}
+                        onChange={(e) => handleCodeLanguageChange(e.target.value)}
+                        className="bg-[#2a2a2a] text-white text-sm rounded-md px-3 py-1 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        {availableCodeLanguages.map(lang => (
+                          <option key={lang} value={lang}>
+                            {lang.charAt(0).toUpperCase() + lang.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <button className="px-3 sm:px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-md transition-colors cursor-pointer">
+                  Submit
+                </button>
+              </div>
             </div>
             <div className="flex-1">
+              {/* Add editorReady state to main editor */}
               <Editor
                 height="100%"
                 value={userSolutions[activeUserSolution]?.code || ''}
-                language="python"
+                language={selectedCodeLanguage}
                 theme="vs-dark"
                 options={{
                   fontSize: 14,
@@ -568,32 +683,61 @@ export default function QuestionPage({ params }) {
 }
 
 // Mobile Components
-const MobileDescription = ({ question, activeLeftTab, handleLeftTabChange, renderContent }) => (
+const MobileDescription = ({ question, activeLeftTab, handleLeftTabChange, renderContent, selectedSolutionLanguage, availableSolutionLanguages, handleSolutionLanguageChange }) => (
   <div className="h-full flex flex-col bg-[#1a1a1a] overflow-hidden">
-    <div className="border-b border-[#2a2a2a] flex overflow-x-auto hide-scrollbar">
-      <button
-        onClick={() => handleLeftTabChange(0)}
-        className={`px-4 py-3 text-sm font-medium transition-colors relative whitespace-nowrap
-          ${activeLeftTab === 0 ? 'text-white' : 'text-gray-400'}`}
-      >
-        Description
-        {activeLeftTab === 0 && (
-          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
-        )}
-      </button>
-      {question?.solutions?.map((solution, index) => (
+    <div className="border-b border-[#2a2a2a] flex flex-col">
+      {/* Language selector */}
+      {availableSolutionLanguages.length > 1 && (
+        <div className="px-4 py-2 flex items-center gap-2 border-b border-[#2a2a2a]">
+          <span className="text-sm text-gray-400">Language:</span>
+          <div className="relative">
+            <select
+              value={selectedSolutionLanguage}
+              onChange={(e) => handleSolutionLanguageChange(e.target.value)}
+              className="bg-[#2a2a2a] text-white text-sm rounded-md px-3 py-1 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              {availableSolutionLanguages.map(lang => (
+                <option key={lang} value={lang}>
+                  {lang.charAt(0).toUpperCase() + lang.slice(1)}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div className="flex overflow-x-auto hide-scrollbar">
         <button
-          key={index + 1}
-          onClick={() => handleLeftTabChange(index + 1)}
+          onClick={() => handleLeftTabChange(0)}
           className={`px-4 py-3 text-sm font-medium transition-colors relative whitespace-nowrap
-            ${activeLeftTab === index + 1 ? 'text-white' : 'text-gray-400'}`}
+            ${activeLeftTab === 0 ? 'text-white' : 'text-gray-400'}`}
         >
-          {solution.title || `Solution ${index + 1}`}
-          {activeLeftTab === index + 1 && (
+          Description
+          {activeLeftTab === 0 && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
           )}
         </button>
-      ))}
+        {question?.solutions?.[selectedSolutionLanguage] ?
+          Object.keys(question.solutions[selectedSolutionLanguage]).map((key, index) => (
+          <button
+            key={index + 1}
+            onClick={() => handleLeftTabChange(index + 1)}
+            className={`px-4 py-3 text-sm font-medium transition-colors relative whitespace-nowrap
+              ${activeLeftTab === index + 1 ? 'text-white' : 'text-gray-400'}`}
+          >
+            {question.solutions[selectedSolutionLanguage][key].title || `Solution ${index + 1}`}
+            {activeLeftTab === index + 1 && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+            )}
+          </button>
+        )) : null}
+      </div>
     </div>
 
     <div className="flex-1 overflow-y-auto p-4 pb-16">
@@ -604,7 +748,7 @@ const MobileDescription = ({ question, activeLeftTab, handleLeftTabChange, rende
               <h3 className="text-base font-medium text-white mb-3">Problem Description</h3>
               {renderContent(question?.description)}
             </div>
-            
+
             <div>
               <h3 className="text-base font-medium text-white mb-3">Examples</h3>
               {renderContent(question?.examples)}
@@ -618,19 +762,24 @@ const MobileDescription = ({ question, activeLeftTab, handleLeftTabChange, rende
         </div>
       ) : (
         <div className="prose prose-invert max-w-none">
-          {question?.solutions?.[activeLeftTab - 1] && (
+          {question?.solutions?.[selectedSolutionLanguage] && (() => {
+            const solutionKeys = Object.keys(question.solutions[selectedSolutionLanguage]);
+            if (solutionKeys.length >= activeLeftTab) {
+              const key = solutionKeys[activeLeftTab - 1];
+              const solution = question.solutions[selectedSolutionLanguage][key];
+              return (
             <div className="space-y-4">
               <div>
                 <h4 className="text-base font-medium text-white mb-2">Explanation</h4>
-                {renderContent(question.solutions[activeLeftTab - 1].explanation)}
+                {renderContent(solution.explanation)}
               </div>
               <div>
                 <h4 className="text-base font-medium text-white mb-2">Solution</h4>
                 <div className="h-[250px] bg-[#282c34] rounded-lg overflow-hidden">
                   <Editor
                     height="100%"
-                    value={question.solutions[activeLeftTab - 1].code}
-                    language="python"
+                    value={solution.code}
+                    language={selectedSolutionLanguage}
                     theme="vs-dark"
                     options={{
                       fontSize: 14,
@@ -646,20 +795,48 @@ const MobileDescription = ({ question, activeLeftTab, handleLeftTabChange, rende
                 </div>
               </div>
             </div>
-          )}
-        </div>
+            );
+          }
+          return null;
+        })()}</div>
       )}
     </div>
   </div>
-);  // End with semicolon
+);
 
-const MobileEditor = ({ userSolutions, activeUserSolution }) => (
+
+const MobileEditor = ({ userSolutions, activeUserSolution, selectedCodeLanguage, availableCodeLanguages, handleCodeLanguageChange }) => (
   <div className="h-full bg-[#1a1a1a] flex flex-col">
+    {/* Language selector for mobile */}
+    {availableCodeLanguages.length > 1 && (
+      <div className="px-4 py-2 flex items-center gap-2 border-b border-[#2a2a2a]">
+        <span className="text-sm text-gray-400">Language:</span>
+        <div className="relative">
+          <select
+            value={selectedCodeLanguage}
+            onChange={(e) => handleCodeLanguageChange(e.target.value)}
+            className="bg-[#2a2a2a] text-white text-sm rounded-md px-3 py-1 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            {availableCodeLanguages.map(lang => (
+              <option key={lang} value={lang}>
+                {lang.charAt(0).toUpperCase() + lang.slice(1)}
+              </option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    )}
+
     <div className="flex-1">
       <Editor
         height="100%"
         value={userSolutions[activeUserSolution]?.code || ''}
-        language="python"
+        language={selectedCodeLanguage}
         theme="vs-dark"
         options={{
           fontSize: 14,
@@ -673,4 +850,4 @@ const MobileEditor = ({ userSolutions, activeUserSolution }) => (
       />
     </div>
   </div>
-);  
+);
