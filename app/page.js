@@ -2,10 +2,11 @@
 import Login from '@/components/Login';
 import { auth, db } from '@/components/firebase.config';
 import { format } from 'date-fns';
-import { get, push, ref, set } from 'firebase/database';
+import { ref, get, push, update } from 'firebase/database';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 
 export default function Home() {
   const [currentQuestion, setCurrentQuestion] = useState(null);
@@ -20,6 +21,9 @@ export default function Home() {
   const [hasImported, setHasImported] = useState(false);
   const [needsSolutions, setNeedsSolutions] = useState(false);
   const [hasNewQuestionsToImport, setHasNewQuestionsToImport] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isRandomizing, setIsRandomizing] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(true);
   const router = useRouter();
 
   const handleAuthRequired = () => {
@@ -38,10 +42,18 @@ export default function Home() {
   const [questions, setQuestions] = useState([]);
 
   useEffect(() => {
-    if (user) {
+    const fetchData = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
-      const questionsRef = ref(db, `users/${user.uid}/questions`);
-      get(questionsRef).then((snapshot) => {
+      try {
+        // Fetch questions and topics in parallel
+        const questionsRef = ref(db, `users/${user.uid}/questions`);
+        const snapshot = await get(questionsRef);
+        
         if (snapshot.exists()) {
           const questionsData = [];
           let needsSolutionsFlag = false;
@@ -49,7 +61,6 @@ export default function Home() {
           snapshot.forEach((childSnapshot) => {
             const question = childSnapshot.val();
             
-            // Check if solutions or empty_code is missing
             if (!question.solutions || !question.empty_code) {
               needsSolutionsFlag = true;
             }
@@ -68,21 +79,23 @@ export default function Home() {
           setNeedsSolutions(needsSolutionsFlag);
           setQuestions(questionsData);
 
-          // Extract unique topics from the fetched questions and update state
+          // Extract unique topics
           const uniqueTopicsFromQuestions = [...new Set(questionsData.map(q => q.topic || 'Uncategorized'))].sort();
-          setTopics(uniqueTopicsFromQuestions); // Update the topics state here
-
+          setTopics(uniqueTopicsFromQuestions);
         } else {
-          // Handle case where user has no questions
           setQuestions([]);
-          setTopics([]); // Clear topics if no questions exist
+          setTopics([]);
         }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load questions');
+      } finally {
         setIsLoading(false);
-      }).catch((error) => {
-        console.error('Error fetching questions:', error);
-        setIsLoading(false);
-      });
-    }
+        setInitialLoadComplete(true);
+      }
+    };
+
+    fetchData();
   }, [user]);
 
   // Separate useEffect for checking new questions to import
@@ -139,7 +152,7 @@ export default function Home() {
       handleAuthRequired();
       return;
     }
-    setIsLoading(true);
+    setIsRandomizing(true);
     
     setTimeout(() => {
       const filteredQuestions = selectedTopics.length > 0
@@ -168,8 +181,9 @@ export default function Home() {
         setCurrentQuestion(null);
       }
       
-      setIsLoading(false);
-    }, 600); // Add a slight delay for better loading animation
+      // Make sure to reset the randomizing state
+      setIsRandomizing(false);
+    }, 500); // Keep a small delay for the loading animation
   };
 
   const handleTopicSelect = (topic) => {
@@ -215,83 +229,94 @@ export default function Home() {
       return;
     }
 
-    setIsLoading(true);
+    setIsImporting(true);
     try {
-      // Get public questions and topics
-      const publicQuestionsRef = ref(db, 'public/questions');
-      const publicTopicsRef = ref(db, 'public/topics');
+      // Get public questions and topics in parallel
       const [publicQuestionsSnapshot, publicTopicsSnapshot] = await Promise.all([
-        get(publicQuestionsRef),
-        get(publicTopicsRef)
+        get(ref(db, 'public/questions')),
+        get(ref(db, 'public/topics'))
       ]);
       
       if (!publicQuestionsSnapshot.exists()) {
-        alert('No public questions available to import');
-        setIsLoading(false);
+        toast.error('No public questions available to import');
         return;
       }
 
-      // Get user's existing questions and topics
-      const userQuestionsRef = ref(db, `users/${user.uid}/questions`);
-      const userTopicsRef = ref(db, `users/${user.uid}/topics`);
+      // Get user's existing questions and topics in parallel
       const [userQuestionsSnapshot, userTopicsSnapshot] = await Promise.all([
-        get(userQuestionsRef),
-        get(userTopicsRef)
+        get(ref(db, `users/${user.uid}/questions`)),
+        get(ref(db, `users/${user.uid}/topics`))
       ]);
 
       const existingQuestions = userQuestionsSnapshot.exists() 
         ? Object.values(userQuestionsSnapshot.val()) 
         : [];
-      const existingTopics = userTopicsSnapshot.exists() 
-        ? Object.values(userTopicsSnapshot.val()) 
-        : [];
 
-      // Import topics first
-      if (publicTopicsSnapshot.exists()) {
-        const publicTopics = Object.entries(publicTopicsSnapshot.val());
-        
-        for (const [topicId, topicName] of publicTopics) {
-          // Check if topic already exists
-          if (!existingTopics.includes(topicName)) {
-            // Add new topic using the same ID as public topic
-            await set(ref(db, `users/${user.uid}/topics/${topicId}`), topicName);
-          }
-        }
-      }
-      
       // Import questions
       const publicQuestions = Object.values(publicQuestionsSnapshot.val());
-      
-      for (const question of publicQuestions) {
-        // Check if question already exists (by title)
-        const isDuplicate = existingQuestions.some(
-          eq => eq.title.toLowerCase() === question.title.toLowerCase()
-        );
+      const newQuestions = publicQuestions.filter(publicQuestion => 
+        !existingQuestions.some(eq => 
+          eq.title.toLowerCase() === publicQuestion.title.toLowerCase()
+        )
+      );
 
-        if (!isDuplicate) {
-          // Add question to user's questions
-          await push(userQuestionsRef, {
+      // Batch write questions
+      if (newQuestions.length > 0) {
+        const userQuestionsRef = ref(db, `users/${user.uid}/questions`);
+        const updates = {};
+        newQuestions.forEach((question) => {
+          const newQuestionKey = push(userQuestionsRef).key;
+          updates[`users/${user.uid}/questions/${newQuestionKey}`] = {
             ...question,
             importedAt: Date.now()
+          };
+        });
+        
+        await update(ref(db), updates);
+
+        // Fetch updated questions immediately after import
+        const updatedSnapshot = await get(ref(db, `users/${user.uid}/questions`));
+        if (updatedSnapshot.exists()) {
+          const updatedQuestionsData = [];
+          updatedSnapshot.forEach((childSnapshot) => {
+            const question = childSnapshot.val();
+            updatedQuestionsData.push({
+              id: childSnapshot.key,
+              title: question.title,
+              topic: question.topic,
+              difficulty: question.difficulty,
+              lastRevised: question.lastRevised || null,
+              hasSolutions: !!question.solutions,
+              hasEmptyCode: !!question.empty_code
+            });
           });
+          
+          // Update questions state with new data
+          setQuestions(updatedQuestionsData);
+          
+          // Extract and update topics
+          const uniqueTopicsFromQuestions = [...new Set(updatedQuestionsData.map(q => q.topic || 'Uncategorized'))].sort();
+          setTopics(uniqueTopicsFromQuestions);
         }
       }
 
-      // Show success notification
-      setShowSuccessNotification(true);
-      setHasImported(true);
-
-      // Redirect to dashboard after a delay
-      setTimeout(() => {
-        setShowSuccessNotification(false);
-        router.push('/dashboard');
-      }, 2000);
+      toast.success('Questions imported successfully!', {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+      
+      setHasNewQuestionsToImport(false);
 
     } catch (error) {
       console.error('Error importing questions:', error);
-      alert('Failed to import questions. Please try again.');
+      toast.error('Failed to import questions. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsImporting(false);
     }
   };
 
@@ -435,13 +460,25 @@ export default function Home() {
               {hasNewQuestionsToImport && (
                 <button 
                   onClick={handleImportQuestions}
-                  disabled={isLoading}
+                  disabled={isImporting}
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(34,197,94,0.5)] hover:-translate-y-1 group disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                  </svg>
-                  {isLoading ? 'Importing...' : 'Import New Questions'}
+                  {isImporting ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Importing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      <span>Import New Questions</span>
+                    </>
+                  )}
                 </button>
               )}
 
@@ -562,11 +599,11 @@ export default function Home() {
           {/* Randomize Button with enhanced styling and interaction */}
           <button 
             onClick={handleRandomize}
-            disabled={isLoading}
-            className={`w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3.5 rounded-xl transition-colors duration-300 hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] relative overflow-hidden group cursor-pointer ${isLoading ? 'opacity-80 cursor-not-allowed' : ''}`}
+            disabled={isRandomizing}
+            className={`w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3.5 rounded-xl transition-colors duration-300 hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] relative overflow-hidden group cursor-pointer ${isRandomizing ? 'opacity-80 cursor-not-allowed' : ''}`}
           >
             <span className="relative z-10 flex items-center justify-center gap-2 font-medium text-base">
-              {isLoading ? (
+              {isRandomizing ? (
                 <>
                   <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -632,8 +669,12 @@ export default function Home() {
         </div>
       ) : (
         <div className="mt-8 p-8 rounded-xl bg-gray-800/50 backdrop-blur-sm border border-gray-700 shadow-lg text-center">
-          {isLoading ? (
-            // Loading state
+          {!initialLoadComplete ? (
+            <div className="py-10">
+              <div className="animate-spin w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full mx-auto mb-6"></div>
+              <p className="text-gray-300">Loading your questions...</p>
+            </div>
+          ) : isLoading ? (
             <div className="py-10">
               <div className="animate-spin w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full mx-auto mb-6"></div>
               <p className="text-gray-300">Finding the perfect question for you...</p>
@@ -687,7 +728,7 @@ export default function Home() {
               )}
             </>
           ) : (
-            // Initial Message
+            // Ready to Practice Message
             <>
               <div className="animate-pulse mb-6">
                 <svg 
@@ -713,12 +754,25 @@ export default function Home() {
               <div className="flex justify-center">
                 <button 
                   onClick={handleRandomize}
-                  className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all duration-300 flex items-center gap-2 group cursor-pointer"
+                  disabled={isRandomizing}
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
                 >
-                  <svg className="w-5 h-5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Get Started
+                  {isRandomizing ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Finding Question...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      <span>Randomize Question</span>
+                    </>
+                  )}
                 </button>
               </div>
             </>
