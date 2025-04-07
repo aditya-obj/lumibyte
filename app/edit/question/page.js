@@ -3,7 +3,8 @@ import { auth, db } from '@/components/firebase.config';
 import Editor from '@monaco-editor/react';
 import { get, ref, update } from 'firebase/database';
 import { useRouter } from 'next/navigation';
-import React, { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { HashLoader } from 'react-spinners';
 
 // Notification component
 const Notification = ({ message, type, onClose }) => {
@@ -366,8 +367,9 @@ function EditQuestionContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen p-8 flex justify-center items-center bg-[#111827]">
-        <div className="animate-spin w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full"></div>
+      <div className="min-h-screen p-8 flex flex-col justify-center items-center bg-[#111827]">
+        <HashLoader color="#9333ea" size={50} />
+        <p className="mt-4 text-sm text-gray-400">Loading question editor...</p>
       </div>
     );
   }
@@ -788,8 +790,9 @@ function EditQuestionContent() {
 export default function EditQuestionPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen p-8 flex justify-center items-center bg-[#111827]">
-        <div className="animate-spin w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full"></div>
+      <div className="min-h-screen p-8 flex flex-col justify-center items-center bg-[#111827]">
+        <HashLoader color="#9333ea" size={50} />
+        <p className="mt-4 text-sm text-gray-400">Preparing editor...</p>
       </div>
     }>
       <EditQuestionContent />

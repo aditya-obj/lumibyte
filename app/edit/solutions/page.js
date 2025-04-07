@@ -3,6 +3,7 @@ import { auth, db } from '@/components/firebase.config';
 import { get, ref } from 'firebase/database';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { RingLoader } from 'react-spinners';
 
 export default function EditSolutions() {
   const [showScrollButton, setShowScrollButton] = useState(false); // State for scroll button visibility
@@ -128,8 +129,9 @@ export default function EditSolutions() {
 
       {/* Loading State */}
       {isLoading && (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full"></div>
+        <div className="flex flex-col justify-center items-center py-12">
+          <RingLoader color="#9333ea" size={50} />
+          <p className="mt-4 text-sm text-gray-400">Loading solutions...</p>
         </div>
       )}
 

@@ -2,10 +2,11 @@
 import Login from '@/components/Login';
 import { auth, db } from '@/components/firebase.config';
 import { format } from 'date-fns';
-import { ref, get, push, update } from 'firebase/database';
+import { get, push, ref, update } from 'firebase/database';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { BeatLoader } from 'react-spinners';
 import { toast } from 'react-toastify';
 
 export default function Home() {
@@ -671,13 +672,13 @@ export default function Home() {
         <div className="mt-8 p-8 rounded-xl bg-gray-800/50 backdrop-blur-sm border border-gray-700 shadow-lg text-center">
           {!initialLoadComplete ? (
             <div className="py-10">
-              <div className="animate-spin w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full mx-auto mb-6"></div>
-              <p className="text-gray-300">Loading your questions...</p>
+              <BeatLoader color="#9333ea" size={15} margin={2} />
+              <p className="mt-4 text-gray-300">Loading your questions...</p>
             </div>
           ) : isLoading ? (
             <div className="py-10">
-              <div className="animate-spin w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full mx-auto mb-6"></div>
-              <p className="text-gray-300">Finding the perfect question for you...</p>
+              <BeatLoader color="#9333ea" size={15} margin={2} />
+              <p className="mt-4 text-gray-300">Finding the perfect question for you...</p>
             </div>
           ) : questions.length === 0 || (selectedTopics.length > 0 && !questions.some(q => selectedTopics.includes(q.topic))) ? (
             // No Questions Available Message

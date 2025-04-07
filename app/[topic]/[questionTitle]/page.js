@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { MdFullscreen, MdFullscreenExit } from 'react-icons/md';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { PulseLoader } from 'react-spinners';
 
 // Add the splitExamples function at the top level
 const splitExamples = (examples) => {
@@ -360,8 +361,12 @@ export default function QuestionPage({ params }) {
   }, [user, unwrappedParams]);
 
   if (loading) {
-    // LeetCode-like loading state
-    return <div className="min-h-screen p-8 bg-[#1a1a1a] text-gray-400 flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen p-8 bg-[#1a1a1a] text-gray-400 flex flex-col items-center justify-center">
+        <PulseLoader color="#9333ea" size={15} margin={2} />
+        <p className="mt-4 text-sm text-gray-400">Loading question...</p>
+      </div>
+    );
   }
 
   if (!question) {
