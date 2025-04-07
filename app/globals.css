@@ -513,3 +513,19 @@ button:active {
 .monaco-editor .scrollbar .slider:hover {
   background: var(--scrollbar-thumb-hover-color) !important;
 }
+
+/* Panel resize styles */
+[data-panel-resize-handle-id] {
+  transition: background-color 150ms ease;
+}
+
+[data-panel-resize-handle-id]:hover {
+  background-color: transparent;
+}
+
+[data-panel-resize-handle-id][data-resize-handle-active] {
+  background-color: transparent;
+}
+
+
+

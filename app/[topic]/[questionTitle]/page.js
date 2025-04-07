@@ -7,6 +7,7 @@ import { marked } from 'marked';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 // Add the splitExamples function at the top level
 const splitExamples = (examples) => {
@@ -107,6 +108,36 @@ const parseExamples = (examplesMarkdown) => {
   });
 };
 
+// Add this resize handle component
+const ResizeHandle = () => {
+  return (
+    <PanelResizeHandle className="w-2 transition-colors cursor-col-resize relative group">
+      <div className="h-full flex items-center justify-center relative">
+        {/* Default thicker gray line in middle that disappears on hover */}
+        <div className="w-[3px] h-[24px] bg-[#2a2a2a] transition-opacity group-hover:opacity-0" />
+        
+        {/* Full height blue line on hover */}
+        <div className="absolute w-[3px] h-full bg-[#0084ff] opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
+    </PanelResizeHandle>
+  );
+};
+
+// First, add a horizontal resize handle component
+const HorizontalResizeHandle = () => {
+  return (
+    <PanelResizeHandle className="h-4 transition-colors cursor-row-resize relative group">
+      <div className="w-full h-full flex justify-center items-center relative">
+        {/* Default gray line with gap */}
+        <div className="h-[2px] w-[24px] bg-[#2a2a2a] transition-opacity group-hover:opacity-0" />
+        
+        {/* Full width blue line on hover that fills the gap */}
+        <div className="absolute h-[2px] w-full bg-[#0084ff] opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
+    </PanelResizeHandle>
+  );
+};
+
 export default function QuestionPage({ params }) {
   const unwrappedParams = React.use(params);
   const [mobileView, setMobileView] = useState('description');
@@ -123,6 +154,7 @@ export default function QuestionPage({ params }) {
   const router = useRouter();
   const [previousPath, setPreviousPath] = useState('/');
   const [blurredSolutions, setBlurredSolutions] = useState(new Set());
+  const [isTestCasesExpanded, setIsTestCasesExpanded] = useState(false);
 
   // Language selection states
   const [availableSolutionLanguages, setAvailableSolutionLanguages] = useState(['python']);
@@ -337,6 +369,10 @@ export default function QuestionPage({ params }) {
     router.push(previousPath);
   };
 
+  const handleTestCasesExpand = () => {
+    setIsTestCasesExpanded(!isTestCasesExpanded);
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Top Navigation Bar */}
@@ -456,275 +492,320 @@ export default function QuestionPage({ params }) {
         </div>
 
         {/* Desktop Layout */}
-        <div className="hidden lg:grid lg:grid-cols-2 gap-4 p-4">
-          {/* Left Column - Problem Description */}
-          <div className="h-[calc(100vh-10rem)] flex flex-col bg-[#1a1a1a] rounded-xl overflow-hidden">
-            <div className="border-b border-[#2a2a2a] flex flex-col">
-              {/* Language selector */}
-              {availableSolutionLanguages.length > 1 && (
-                <div className="px-4 py-2 flex items-center gap-2 border-b border-[#2a2a2a]">
-                  <span className="text-sm text-gray-400">Language:</span>
-                  <div className="relative">
-                    <select
-                      value={selectedSolutionLanguage}
-                      onChange={(e) => handleSolutionLanguageChange(e.target.value)}
-                      className="bg-[#2a2a2a] text-white text-sm rounded-md px-3 py-1 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      {availableSolutionLanguages.map(lang => (
-                        <option key={lang} value={lang}>
-                          {lang.charAt(0).toUpperCase() + lang.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
+        <div className="hidden lg:block h-[calc(100vh-10rem)]">
+          <PanelGroup direction="horizontal">
+            <Panel defaultSize={50} minSize={30}>
+              <div className="h-full flex flex-col bg-[#1a1a1a] rounded-xl overflow-hidden">
+                <div className="border-b border-[#2a2a2a] flex flex-col">
+                  {/* Language selector */}
+                  {availableSolutionLanguages.length > 1 && (
+                    <div className="px-4 py-2 flex items-center gap-2 border-b border-[#2a2a2a]">
+                      <span className="text-sm text-gray-400">Language:</span>
+                      <div className="relative">
+                        <select
+                          value={selectedSolutionLanguage}
+                          onChange={(e) => handleSolutionLanguageChange(e.target.value)}
+                          className="bg-[#2a2a2a] text-white text-sm rounded-md px-3 py-1 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                          {availableSolutionLanguages.map(lang => (
+                            <option key={lang} value={lang}>
+                              {lang.charAt(0).toUpperCase() + lang.slice(1)}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Tabs */}
-              <div className="flex overflow-x-auto custom-scrollbar">
-                <button
-                  onClick={() => handleLeftTabChange(0)}
-                  className={`px-4 sm:px-6 py-3 text-sm font-medium transition-colors relative whitespace-nowrap
-                    ${activeLeftTab === 0 ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
-                >
-                  Description
-                  {activeLeftTab === 0 && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
                   )}
-                </button>
-                {question?.solutions?.[selectedSolutionLanguage] ?
-                  Object.keys(question.solutions[selectedSolutionLanguage]).map((key, index) => (
-                  <button
-                    key={index + 1}
-                    onClick={() => handleLeftTabChange(index + 1)}
-                    className={`px-4 sm:px-6 py-3 text-sm font-medium transition-colors relative whitespace-nowrap
-                      ${activeLeftTab === index + 1 ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
-                  >
-                    {question.solutions[selectedSolutionLanguage][key].title || `Solution ${index + 1}`}
-                    {activeLeftTab === index + 1 && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
-                    )}
-                  </button>
-                )) : null}
-              </div>
-            </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
-              {activeLeftTab === 0 ? (
-                <div className="prose prose-invert max-w-none">
-                  <div className="space-y-6">
-                    {/* Problem Description */}
-                    <div>
-                      <h3 className="text-lg font-medium text-white mb-4">Problem Description</h3>
-                      {renderContent(question?.description)}
-                    </div>
-
-                    {/* Examples */}
-                    <div>
-                      <h3 className="text-lg font-medium text-white mb-4">Examples</h3>
-                      <div className="space-y-6">
-                        {splitExamples(question?.examples).map((example, index) => (
-                          <div key={index} className="space-y-2">
-                            <div className="inline-block bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded text-sm font-medium">
-                              Example {index + 1}
-                            </div>
-                            {renderContent(example)}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Constraints */}
-                    <div className="mb-8">
-                      <h3 className="text-lg font-medium text-white mb-4">Constraints</h3>
-                      {renderContent(formatConstraints(question?.constraints))}
-                    </div>
+                  {/* Tabs */}
+                  <div className="flex overflow-x-auto custom-scrollbar">
+                    <button
+                      onClick={() => handleLeftTabChange(0)}
+                      className={`px-4 sm:px-6 py-3 text-sm font-medium transition-colors relative whitespace-nowrap
+                        ${activeLeftTab === 0 ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
+                    >
+                      Description
+                      {activeLeftTab === 0 && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                      )}
+                    </button>
+                    {question?.solutions?.[selectedSolutionLanguage] ?
+                      Object.keys(question.solutions[selectedSolutionLanguage]).map((key, index) => (
+                      <button
+                        key={index + 1}
+                        onClick={() => handleLeftTabChange(index + 1)}
+                        className={`px-4 sm:px-6 py-3 text-sm font-medium transition-colors relative whitespace-nowrap
+                          ${activeLeftTab === index + 1 ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
+                      >
+                        {question.solutions[selectedSolutionLanguage][key].title || `Solution ${index + 1}`}
+                        {activeLeftTab === index + 1 && (
+                          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                        )}
+                      </button>
+                    )) : null}
                   </div>
                 </div>
-              ) : (
-                <div className="prose prose-invert max-w-none">
-                  {question?.solutions?.[selectedSolutionLanguage] && (() => {
-                    const solutionKeys = Object.keys(question.solutions[selectedSolutionLanguage]);
-                    if (solutionKeys.length >= activeLeftTab) {
-                      const key = solutionKeys[activeLeftTab - 1];
-                      const solution = question.solutions[selectedSolutionLanguage][key];
-                      return (
-                    <>
-                      <div className="mb-6">
-                        <h4 className="text-base sm:text-lg font-medium text-white mb-3">Explanation</h4>
-                        {renderContent(solution.explanation)}
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                  {activeLeftTab === 0 ? (
+                    <div className="prose prose-invert max-w-none">
+                      <div className="space-y-6">
+                        {/* Problem Description */}
+                        <div>
+                          <h3 className="text-lg font-medium text-white mb-4">Problem Description</h3>
+                          {renderContent(question?.description)}
+                        </div>
+
+                        {/* Examples */}
+                        <div>
+                          <h3 className="text-lg font-medium text-white mb-4">Examples</h3>
+                          <div className="space-y-6">
+                            {splitExamples(question?.examples).map((example, index) => (
+                              <div key={index} className="space-y-2">
+                                <div className="inline-block bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded text-sm font-medium">
+                                  Example {index + 1}
+                                </div>
+                                {renderContent(example)}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Constraints */}
+                        <div className="mb-8">
+                          <h3 className="text-lg font-medium text-white mb-4">Constraints</h3>
+                          {renderContent(formatConstraints(question?.constraints))}
+                        </div>
                       </div>
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="text-base sm:text-lg font-medium text-white">Solution</h4>
-                          <button
-                            onClick={() => toggleSolutionBlur(activeLeftTab - 1)}
-                            className="p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-gray-700/50"
-                            title={blurredSolutions.has(activeLeftTab - 1) ? "Show Solution" : "Hide Solution"}
-                          >
-                            {blurredSolutions.has(activeLeftTab - 1) ? (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                            ) : (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                              </svg>
-                            )}
+                    </div>
+                  ) : (
+                    <div className="prose prose-invert max-w-none">
+                      {question?.solutions?.[selectedSolutionLanguage] && (() => {
+                        const solutionKeys = Object.keys(question.solutions[selectedSolutionLanguage]);
+                        if (solutionKeys.length >= activeLeftTab) {
+                          const key = solutionKeys[activeLeftTab - 1];
+                          const solution = question.solutions[selectedSolutionLanguage][key];
+                          return (
+                        <>
+                          <div className="mb-6">
+                            <h4 className="text-base sm:text-lg font-medium text-white mb-3">Explanation</h4>
+                            {renderContent(solution.explanation)}
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="text-base sm:text-lg font-medium text-white">Solution</h4>
+                              <button
+                                onClick={() => toggleSolutionBlur(activeLeftTab - 1)}
+                                className="p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-gray-700/50"
+                                title={blurredSolutions.has(activeLeftTab - 1) ? "Show Solution" : "Hide Solution"}
+                              >
+                                {blurredSolutions.has(activeLeftTab - 1) ? (
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
+                                ) : (
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
+                            <div className={`h-[300px] bg-[#282c34] rounded-lg overflow-hidden relative ${blurredSolutions.has(activeLeftTab - 1) ? 'select-none' : ''}`}>
+                              <Editor
+                                height="100%"
+                                value={solution.code}
+                                language={selectedSolutionLanguage}
+                                theme="vs-dark"
+                                options={{
+                                  fontSize: 14,
+                                  minimap: { enabled: false },
+                                  scrollBeyondLastLine: false,
+                                  padding: { top: 16, bottom: 16 },
+                                  lineNumbers: 'on',
+                                  readOnly: true,
+                                  wordWrap: 'on',
+                                  automaticLayout: true,
+                                }}
+                              />
+                              {blurredSolutions.has(activeLeftTab - 1) && (
+                                <div
+                                  className="absolute inset-0 backdrop-blur-md bg-gray-800/30 flex items-center justify-center cursor-pointer"
+                                  onClick={() => toggleSolutionBlur(activeLeftTab - 1)}
+                                >
+                                  <span className="text-gray-300 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    Click to reveal solution
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                        );
+                      }
+                      return null;
+                    })()}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Panel>
+            
+            <ResizeHandle />
+            
+            <Panel defaultSize={50} minSize={30}>
+              <div className="h-full flex flex-col bg-[#1a1a1a] rounded-xl overflow-hidden">
+                {/* Solution Editor Section */}
+                <PanelGroup direction="vertical">
+                  <Panel 
+                    defaultSize={60}  // Reduced further
+                    minSize={25}      // Reduced minimum size
+                    maxSize={75}      // Adjusted maximum size
+                  >
+                    <div className="h-full flex flex-col">
+                      <div className="border-b border-[#2a2a2a] flex flex-col">
+                        <div className="px-4 sm:px-6 py-3 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <h2 className="text-white font-medium text-sm sm:text-base">Your Solution</h2>
+                          </div>
+                          <button className="px-3 sm:px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-md transition-colors cursor-pointer">
+                            Run
                           </button>
                         </div>
-                        <div className={`h-[300px] bg-[#282c34] rounded-lg overflow-hidden relative ${blurredSolutions.has(activeLeftTab - 1) ? 'select-none' : ''}`}>
-                          <Editor
-                            height="100%"
-                            value={solution.code}
-                            language={selectedSolutionLanguage}
-                            theme="vs-dark"
-                            options={{
-                              fontSize: 14,
-                              minimap: { enabled: false },
-                              scrollBeyondLastLine: false,
-                              padding: { top: 16, bottom: 16 },
-                              lineNumbers: 'on',
-                              readOnly: true,
-                              wordWrap: 'on',
-                              automaticLayout: true,
-                            }}
-                          />
-                          {blurredSolutions.has(activeLeftTab - 1) && (
-                            <div
-                              className="absolute inset-0 backdrop-blur-md bg-gray-800/30 flex items-center justify-center cursor-pointer"
-                              onClick={() => toggleSolutionBlur(activeLeftTab - 1)}
+                      </div>
+                      <div className="flex-1 min-h-[400px]">
+                        <Editor
+                          height="100%"
+                          value={userSolutions[activeUserSolution]?.code || ''}
+                          language={selectedCodeLanguage}
+                          theme="vs-dark"
+                          options={{
+                            fontSize: 14,
+                            minimap: { enabled: false },
+                            scrollBeyondLastLine: false,
+                            padding: { top: 16, bottom: 16 },
+                            lineNumbers: 'on',
+                            roundedSelection: false,
+                            cursorStyle: 'line',
+                            automaticLayout: true,
+                            wordWrap: 'on',
+                            formatOnType: true,
+                            formatOnPaste: true,
+                            renderLineHighlight: 'all',
+                            scrollbar: {
+                              vertical: 'visible',
+                              horizontal: 'visible',
+                              verticalScrollbarSize: 12,
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </Panel>
+
+                  <HorizontalResizeHandle />
+
+                  <Panel 
+                    defaultSize={40}  // Increased
+                    minSize={25}      // Increased minimum size
+                    maxSize={75}      // Adjusted maximum size
+                  >
+                    {/* Test Cases and Results Section */}
+                    <div className={`h-full flex flex-col group ${isTestCasesExpanded ? 'fixed inset-0 z-50 bg-[#1a1a1a]' : ''}`}>
+                      {/* Tabs */}
+                      <div className="border-b border-[#2a2a2a]">
+                        <div className="flex items-center justify-between px-4">
+                          <div className="flex">
+                            <button
+                              onClick={() => setActiveTab('testCases')}
+                              className={`px-4 py-3 text-sm font-medium transition-colors relative
+                                ${activeTab === 'testCases' ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
                             >
-                              <span className="text-gray-300 flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              Test Cases
+                              {activeTab === 'testCases' && (
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => setActiveTab('results')}
+                              className={`px-4 py-3 text-sm font-medium transition-colors relative
+                                ${activeTab === 'results' ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
+                            >
+                              Results
+                              {activeTab === 'results' && (
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                              )}
+                            </button>
+                          </div>
+                          
+                          {/* Controls - Only show on hover */}
+                          <div className="hidden group-hover:flex items-center gap-2">
+                            <button 
+                              className="p-2 text-gray-400 hover:text-gray-300 transition-colors"
+                              title={isTestCasesExpanded ? "Exit Fullscreen" : "Fullscreen"}
+                              onClick={handleTestCasesExpand}
+                            >
+                              {isTestCasesExpanded ? (
+                                // Collapse icon (shown when expanded)
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                  <path d="M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 6 11.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zm10 1a1.5 1.5 0 0 1 1.5-1.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4z"/>
                                 </svg>
-                                Click to reveal solution
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                    );
-                  }
-                  return null;
-                })()}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column - Code Editor */}
-          <div className="h-[calc(100vh-10rem)] bg-[#1a1a1a] rounded-xl overflow-hidden flex flex-col">
-            {/* Solution Editor Section */}
-            <div className="flex-1 flex flex-col">
-              <div className="border-b border-[#2a2a2a] flex flex-col">
-                <div className="px-4 sm:px-6 py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-white font-medium text-sm sm:text-base">Your Solution</h2>
-                  </div>
-                  <button className="px-3 sm:px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-md transition-colors cursor-pointer">
-                    Run
-                  </button>
-                </div>
-              </div>
-              <div className="flex-1">
-                <Editor
-                  height="100%"
-                  value={userSolutions[activeUserSolution]?.code || ''}
-                  language={selectedCodeLanguage}
-                  theme="vs-dark"
-                  options={{
-                    fontSize: 14,
-                    minimap: { enabled: false },
-                    scrollBeyondLastLine: false,
-                    padding: { top: 16, bottom: 16 },
-                    lineNumbers: 'on',
-                    roundedSelection: false,
-                    cursorStyle: 'line',
-                    automaticLayout: true,
-                    wordWrap: 'on',
-                    formatOnType: true,
-                    formatOnPaste: true,
-                    renderLineHighlight: 'all',
-                    scrollbar: {
-                      vertical: 'visible',
-                      horizontal: 'visible',
-                      verticalScrollbarSize: 12,
-                    }
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Test Cases and Results Section */}
-            <div className="h-[300px] border-t border-[#2a2a2a] flex flex-col">
-              {/* Tabs */}
-              <div className="border-b border-[#2a2a2a]">
-                <div className="flex">
-                  <button
-                    onClick={() => setActiveTab('testCases')}
-                    className={`px-4 py-3 text-sm font-medium transition-colors relative
-                      ${activeTab === 'testCases' ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
-                  >
-                    Test Cases
-                    {activeTab === 'testCases' && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('results')}
-                    className={`px-4 py-3 text-sm font-medium transition-colors relative
-                      ${activeTab === 'results' ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
-                  >
-                    Results
-                    {activeTab === 'results' && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto p-4">
-                {activeTab === 'testCases' ? (
-                  <div className="space-y-3">
-                    {parseExamples(question?.examples).map((example, index) => (
-                      <div key={index} className="bg-[#282c34] rounded-lg p-4">
-                        <div className="mb-3">
-                          <span className="text-sm font-medium text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded">
-                            Testcase {index + 1}
-                          </span>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="text-sm font-mono">
-                            <span className="text-gray-400">Input: </span>
-                            <span className="text-white">{example.input}</span>
-                          </div>
-                          <div className="text-sm font-mono">
-                            <span className="text-gray-400">Output: </span>
-                            <span className="text-white">{example.output}</span>
+                              ) : (
+                                // Expand icon (shown when collapsed)
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                  <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+                                </svg>
+                              )}
+                            </button>
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="bg-[#282c34] rounded-lg p-4 h-full flex items-center justify-center">
-                    <span className="text-gray-400 text-sm">Run your code to see results</span>
-                  </div>
-                )}
+
+                      {/* Content */}
+                      <div className="flex-1 overflow-y-auto p-4">
+                        {activeTab === 'testCases' ? (
+                          <div className="space-y-3">
+                            {parseExamples(question?.examples).map((example, index) => (
+                              <div key={index} className="bg-[#282c34] rounded-lg p-4">
+                                <div className="mb-3">
+                                  <span className="text-sm font-medium text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded">
+                                    Testcase {index + 1}
+                                  </span>
+                                </div>
+                                <div className="space-y-2">
+                                  <div className="text-sm font-mono">
+                                    <span className="text-gray-400">Input: </span>
+                                    <span className="text-white">{example.input}</span>
+                                  </div>
+                                  <div className="text-sm font-mono">
+                                    <span className="text-gray-400">Output: </span>
+                                    <span className="text-white">{example.output}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="bg-[#282c34] rounded-lg p-4 h-full flex items-center justify-center">
+                            <span className="text-gray-400 text-sm">Run your code to see results</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Panel>
+                </PanelGroup>
               </div>
-            </div>
-          </div>
+            </Panel>
+          </PanelGroup>
         </div>
       </div>
 
