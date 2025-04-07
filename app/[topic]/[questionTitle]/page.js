@@ -84,22 +84,42 @@ const formatConstraints = (constraints) => {
     .join('\n\n'); // Add extra line break between constraints
 };
 
+const parseExamples = (examplesMarkdown) => {
+  if (!examplesMarkdown) return [];
+  
+  // Match "Example N:" pattern and split the content
+  const examples = examplesMarkdown.match(/Example \d+:[\s\S]*?(?=Example \d+:|$)/g) || [];
+  
+  return examples.map(example => {
+    // Extract example number
+    const numberMatch = example.match(/Example (\d+):/);
+    const number = numberMatch ? numberMatch[1] : '';
+    
+    // Extract input and output using regex
+    const inputMatch = example.match(/Input[^\[]*(\[.*\])/);
+    const outputMatch = example.match(/Output[^\[]*(\[.*\])/);
+    
+    return {
+      number,
+      input: inputMatch ? inputMatch[1].trim() : '',
+      output: outputMatch ? outputMatch[1].trim() : ''
+    };
+  });
+};
+
 export default function QuestionPage({ params }) {
   const unwrappedParams = React.use(params);
-  // Add this line with other state declarations
-  const [mobileView, setMobileView] = useState('description'); // 'description' or 'editor'
+  const [mobileView, setMobileView] = useState('description');
   const [editorReady, setEditorReady] = useState(false);
-
-  // Existing state declarations
-  const [activeLeftTab, setActiveLeftTab] = useState(0); // 0 for Question, 1+ for solutions
+  const [activeLeftTab, setActiveLeftTab] = useState(0);
   const [question, setQuestion] = useState(null);
   const [userSolutions, setUserSolutions] = useState([{ code: '', timeComplexity: '' }]);
   const [activeUserSolution, setActiveUserSolution] = useState(0);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  // Removed showSolutions state
   const [revealedSolutions, setRevealedSolutions] = useState(new Set());
   const [isRevising, setIsRevising] = useState(false);
+  const [activeTab, setActiveTab] = useState('testCases');
   const router = useRouter();
   const [previousPath, setPreviousPath] = useState('/');
   const [blurredSolutions, setBlurredSolutions] = useState(new Set());
@@ -604,67 +624,105 @@ export default function QuestionPage({ params }) {
 
           {/* Right Column - Code Editor */}
           <div className="h-[calc(100vh-10rem)] bg-[#1a1a1a] rounded-xl overflow-hidden flex flex-col">
-            <div className="border-b border-[#2a2a2a] flex flex-col">
-              <div className="px-4 sm:px-6 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-white font-medium text-sm sm:text-base">Your Solution</h2>
-
-                  {/* Language selector for code editor */}
-                  {availableCodeLanguages.length > 1 && (
-                    <div className="relative">
-                      <select
-                        value={selectedCodeLanguage}
-                        onChange={(e) => handleCodeLanguageChange(e.target.value)}
-                        className="bg-[#2a2a2a] text-white text-sm rounded-md px-3 py-1 pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      >
-                        {availableCodeLanguages.map(lang => (
-                          <option key={lang} value={lang}>
-                            {lang.charAt(0).toUpperCase() + lang.slice(1)}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
-                  )}
+            {/* Solution Editor Section */}
+            <div className="flex-1 flex flex-col">
+              <div className="border-b border-[#2a2a2a] flex flex-col">
+                <div className="px-4 sm:px-6 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-white font-medium text-sm sm:text-base">Your Solution</h2>
+                  </div>
+                  <button className="px-3 sm:px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-md transition-colors cursor-pointer">
+                    Run
+                  </button>
                 </div>
-
-                <button className="px-3 sm:px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-md transition-colors cursor-pointer">
-                  Submit
-                </button>
+              </div>
+              <div className="flex-1">
+                <Editor
+                  height="100%"
+                  value={userSolutions[activeUserSolution]?.code || ''}
+                  language={selectedCodeLanguage}
+                  theme="vs-dark"
+                  options={{
+                    fontSize: 14,
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    padding: { top: 16, bottom: 16 },
+                    lineNumbers: 'on',
+                    roundedSelection: false,
+                    cursorStyle: 'line',
+                    automaticLayout: true,
+                    wordWrap: 'on',
+                    formatOnType: true,
+                    formatOnPaste: true,
+                    renderLineHighlight: 'all',
+                    scrollbar: {
+                      vertical: 'visible',
+                      horizontal: 'visible',
+                      verticalScrollbarSize: 12,
+                    }
+                  }}
+                />
               </div>
             </div>
-            <div className="flex-1">
-              {/* Add editorReady state to main editor */}
-              <Editor
-                height="100%"
-                value={userSolutions[activeUserSolution]?.code || ''}
-                language={selectedCodeLanguage}
-                theme="vs-dark"
-                options={{
-                  fontSize: 14,
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
-                  padding: { top: 16, bottom: 16 },
-                  lineNumbers: 'on',
-                  roundedSelection: false,
-                  cursorStyle: 'line',
-                  automaticLayout: true,
-                  wordWrap: 'on',
-                  formatOnType: true,
-                  formatOnPaste: true,
-                  renderLineHighlight: 'all',
-                  scrollbar: {
-                    vertical: 'visible',
-                    horizontal: 'visible',
-                    verticalScrollbarSize: 12,
-                    horizontalScrollbarSize: 12,
-                  },
-                }}
-              />
+
+            {/* Test Cases and Results Section */}
+            <div className="h-[300px] border-t border-[#2a2a2a] flex flex-col">
+              {/* Tabs */}
+              <div className="border-b border-[#2a2a2a]">
+                <div className="flex">
+                  <button
+                    onClick={() => setActiveTab('testCases')}
+                    className={`px-4 py-3 text-sm font-medium transition-colors relative
+                      ${activeTab === 'testCases' ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
+                  >
+                    Test Cases
+                    {activeTab === 'testCases' && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('results')}
+                    className={`px-4 py-3 text-sm font-medium transition-colors relative
+                      ${activeTab === 'results' ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
+                  >
+                    Results
+                    {activeTab === 'results' && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-4">
+                {activeTab === 'testCases' ? (
+                  <div className="space-y-3">
+                    {parseExamples(question?.examples).map((example, index) => (
+                      <div key={index} className="bg-[#282c34] rounded-lg p-4">
+                        <div className="mb-3">
+                          <span className="text-sm font-medium text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded">
+                            Testcase {index + 1}
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="text-sm font-mono">
+                            <span className="text-gray-400">Input: </span>
+                            <span className="text-white">{example.input}</span>
+                          </div>
+                          <div className="text-sm font-mono">
+                            <span className="text-gray-400">Output: </span>
+                            <span className="text-white">{example.output}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-[#282c34] rounded-lg p-4 h-full flex items-center justify-center">
+                    <span className="text-gray-400 text-sm">Run your code to see results</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -674,7 +732,7 @@ export default function QuestionPage({ params }) {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#1a1a1a] border-t border-[#2a2a2a] px-4 py-3">
         <div className="flex justify-end items-center">
           <button className="px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg cursor-pointer">
-            Submit
+            Run
           </button>
         </div>
       </div>
