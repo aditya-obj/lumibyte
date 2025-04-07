@@ -467,7 +467,7 @@ export default function QuestionPage({ params }) {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[1920px] mx-auto">
+      <div className="max-w-[1920px] mx-2"> {/* Changed from mx-4 to mx-2 */}
         {/* Mobile Layout */}
         <div className="lg:hidden h-[calc(100vh-8rem)]">
           {mobileView === 'description' ? (
@@ -492,7 +492,7 @@ export default function QuestionPage({ params }) {
         </div>
 
         {/* Desktop Layout */}
-        <div className="hidden lg:block h-[calc(100vh-10rem)]">
+        <div className="hidden lg:block h-[calc(100vh-8rem)]">
           <PanelGroup direction="horizontal">
             <Panel defaultSize={50} minSize={30}>
               <div className="h-full flex flex-col bg-[#1a1a1a] rounded-xl overflow-hidden">
