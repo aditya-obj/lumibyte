@@ -7,6 +7,7 @@ import { marked } from 'marked';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
+import { MdFullscreen, MdFullscreenExit } from 'react-icons/md';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 // Add the splitExamples function at the top level
@@ -153,7 +154,10 @@ export default function QuestionPage({ params }) {
   const [activeTab, setActiveTab] = useState('testCases');
   const router = useRouter();
   const [previousPath, setPreviousPath] = useState('/');
-  const [blurredSolutions, setBlurredSolutions] = useState(new Set());
+  const [blurredSolutions, setBlurredSolutions] = useState(() => {
+    // Initialize with all possible solution indices blurred
+    return new Set(Array.from({ length: 20 }, (_, i) => i)); // Increase the initial size to be safe
+  });
   const [isTestCasesExpanded, setIsTestCasesExpanded] = useState(false);
 
   // Language selection states
@@ -756,14 +760,10 @@ export default function QuestionPage({ params }) {
                             >
                               {isTestCasesExpanded ? (
                                 // Collapse icon (shown when expanded)
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                  <path d="M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 6 11.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zm10 1a1.5 1.5 0 0 1 1.5-1.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4z"/>
-                                </svg>
+                                <MdFullscreenExit className="w-6 h-6" />
                               ) : (
                                 // Expand icon (shown when collapsed)
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                  <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
-                                </svg>
+                                <MdFullscreen className="w-6 h-6" />
                               )}
                             </button>
                           </div>
