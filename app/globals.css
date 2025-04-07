@@ -239,6 +239,25 @@ button:active {
   @apply text-gray-300 leading-relaxed;
 }
 
+.question-content pre {
+  @apply my-4 p-4 bg-[#282c34] rounded-lg overflow-x-auto;
+}
+
+@media (max-width: 640px) {
+  .question-content pre {
+    @apply my-3 p-3 text-sm;
+    border-radius: 4px;
+  }
+  
+  .question-content code {
+    @apply text-sm;
+  }
+  
+  .question-content p {
+    @apply text-[15px] leading-relaxed;
+  }
+}
+
 /* Headings */
 .question-content h1,
 .question-content h2,
@@ -310,7 +329,18 @@ button:active {
 
 /* Example specific styling */
 .example-number {
-  @apply inline-block bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded text-sm font-medium mb-2;
+  @apply text-blue-400 font-medium mb-2;
+}
+
+/* Input/Output blocks */
+.question-content .input-output {
+  @apply bg-[#282c34] rounded p-3 my-3 font-mono text-sm;
+}
+
+@media (max-width: 640px) {
+  .input-output {
+    @apply text-sm p-2.5;
+  }
 }
 
 /* Responsive adjustments */
@@ -488,14 +518,14 @@ button:active {
   --scrollbar-thumb-hover-color: rgba(99, 102, 241, 0.6);
 }
 
-/* Hide scrollbar while maintaining functionality */
+/* Hide scrollbar while allowing scrolling */
 .hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
 .hide-scrollbar::-webkit-scrollbar {
-  display: none;
+  display: none;  /* Chrome, Safari and Opera */
 }
 
 /* Prevent rubber-band scrolling on iOS */
@@ -527,5 +557,45 @@ button:active {
   background-color: transparent;
 }
 
+/* Horizontal scrolling tabs */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
 
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
 
+/* Add subtle fade indicators for scroll */
+.overflow-x-auto {
+  position: relative;
+}
+
+.overflow-x-auto::after,
+.overflow-x-auto::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.overflow-x-auto::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(26, 26, 26, 0.9), transparent);
+}
+
+.overflow-x-auto::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(26, 26, 26, 0.9), transparent);
+}
+
+/* Active tab indicator should be visible above fade */
+.border-b-2 {
+  position: relative;
+  z-index: 2;
+}
