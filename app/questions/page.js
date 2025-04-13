@@ -1,44 +1,26 @@
 'use client';
+import Login from '@/components/Login';
 import { auth, db } from '@/components/firebase.config';
-import Editor from '@monaco-editor/react';
-import { get, push, ref, set } from 'firebase/database';
+import { format } from 'date-fns';
+import { get, push, ref, update } from 'firebase/database';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { BeatLoader } from 'react-spinners';
+import { toast } from 'react-toastify';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import Editor from '@monaco-editor/react';
+import { loader } from '@monaco-editor/react';
 
-// Notification component
-const Notification = ({ message, type, onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-    <div className={`fixed top-4 right-4 z-50 max-w-md px-4 py-3 rounded-lg shadow-lg transition-all duration-300 transform translate-x-0 ${type === 'error' ? 'bg-red-500/90' : 'bg-green-500/90'}`}>
-      <div className="flex items-center space-x-3">
-        {type === 'error' ? (
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        ) : (
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        )}
-        <p className="text-white font-medium">{message}</p>
-        <button onClick={onClose} className="text-white hover:text-gray-200">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  );
-};
+// Configure Monaco loader
+loader.config({
+  paths: {
+    vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/min/vs'
+  }
+});
 
 export default function QuestionsPage() {
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [examples, setExamples] = useState('');
@@ -48,9 +30,48 @@ export default function QuestionsPage() {
   const [customTopic, setCustomTopic] = useState('');
   const [topics, setTopics] = useState(['Others']);
   const [questionLink, setQuestionLink] = useState('');
-
-  // Notification state
   const [notification, setNotification] = useState({ show: false, message: '', type: 'error' });
+
+  // Initialize Monaco editor with required languages
+  useEffect(() => {
+    loader.init().then(monaco => {
+      ['python', 'cpp', 'java', 'c'].forEach(lang => {
+        monaco.languages.register({ id: lang });
+      });
+    });
+  }, []); // Empty dependency array means this runs once when component mounts
+
+  // Notification component
+  const Notification = ({ message, type, onClose }) => {
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+      <div className={`fixed top-4 right-4 z-50 max-w-md px-4 py-3 rounded-lg shadow-lg transition-all duration-300 transform translate-x-0 ${type === 'error' ? 'bg-red-500/90' : 'bg-green-500/90'}`}>
+        <div className="flex items-center space-x-3">
+          {type === 'error' ? (
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+          <p className="text-white font-medium">{message}</p>
+          <button onClick={onClose} className="text-white hover:text-gray-200">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -364,8 +385,8 @@ export default function QuestionsPage() {
   };
 
   return (
-    // Adjusted padding for better spacing on different screens
-    <div className="min-h-screen p-4 sm:p-6 md:p-8 bg-gray-900 text-gray-200">
+    <div className="min-h-screen bg-[#0a0a0a]">
+      <Breadcrumbs />
       {/* Show notification if it's active */}
       {notification.show && (
         <Notification
@@ -375,26 +396,8 @@ export default function QuestionsPage() {
         />
       )}
       {/* Header section */}
-      <div className="max-w-7xl mx-auto mb-8">
-        <div className="flex items-center gap-4 mb-4">
-          <button
-            onClick={() => router.back()}
-            className="universal-back-button"
-            aria-label="Go back"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-            <span>Back</span>
-          </button>
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center gap-4 mb-4 py-8">
           <div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
               Add New Question
@@ -789,7 +792,7 @@ export default function QuestionsPage() {
           type="submit"
           className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl
             transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/30 hover:-translate-y-1
-            font-semibold text-lg"
+            font-semibold text-lg mb-8"
         >
           Add Question
         </button>

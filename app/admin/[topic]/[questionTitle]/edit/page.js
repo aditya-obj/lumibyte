@@ -2,9 +2,11 @@
 import { auth, db } from '@/components/firebase.config';
 import Editor from '@monaco-editor/react';
 import { get, ref, update } from 'firebase/database';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
+import React from 'react';
 import { HashLoader } from 'react-spinners';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 // Notification component
 const Notification = ({ message, type, onClose }) => {
@@ -15,71 +17,44 @@ const Notification = ({ message, type, onClose }) => {
     return () => clearTimeout(timer);
   }, [onClose]);
 
+  const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+
   return (
-    <div className={`fixed top-4 right-4 z-50 max-w-md px-4 py-3 rounded-lg shadow-lg transition-all duration-300 transform translate-x-0 ${type === 'error' ? 'bg-red-500/90' : 'bg-green-500/90'}`}>
-      <div className="flex items-center space-x-3">
-        {type === 'error' ? (
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        ) : (
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        )}
-        <p className="text-white font-medium">{message}</p>
-        <button onClick={onClose} className="text-white hover:text-gray-200">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
+    <div className={`fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50`}>
+      {message}
     </div>
   );
 };
 
-const createSlug = (text) => {
-  return text
-    .toLowerCase()
-    .trim()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '');
-};
-
-// Create a wrapper component for the search params functionality
 function EditQuestionContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const questionId = searchParams.get('id');
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [examples, setExamples] = useState('');
   const [constraints, setConstraints] = useState('');
   const [topic, setTopic] = useState('');
+  const [difficulty, setDifficulty] = useState('Easy');
+  const [questionLink, setQuestionLink] = useState('');
+  const [notification, setNotification] = useState({ show: false, message: '', type: 'error' });
+  const [topics, setTopics] = useState(['Others']);
   const [showCustomTopic, setShowCustomTopic] = useState(false);
   const [customTopic, setCustomTopic] = useState('');
-  const [topics, setTopics] = useState(['Others']);
-  const [difficulty, setDifficulty] = useState('Easy');
+
   // Programming language selection - fixed set of languages
   const [availableLanguages] = useState(['python', 'c', 'cpp', 'java']);
   const [selectedLanguage, setSelectedLanguage] = useState('python');
 
-  // Empty code structure with language-specific defaults - all languages are mandatory
+  // Empty code structure with language-specific defaults
   const [emptyCode, setEmptyCode] = useState({
     python: 'def solution():\n    # Write your code here\n    pass',
     c: '#include <stdio.h>\n\nint main() {\n    // Write your code here\n    return 0;\n}',
     cpp: '#include <iostream>\n\nint main() {\n    // Write your code here\n    return 0;\n}',
     java: 'class Solution {\n    public static void main(String[] args) {\n        // Write your code here\n    }\n}'
   });
-
-  const [questionLink, setQuestionLink] = useState('');
-  // Notification state
-  const [notification, setNotification] = useState({ show: false, message: '', type: 'error' });
-  const [isLoading, setIsLoading] = useState(true);
-  const [questionId, setQuestionId] = useState(null);
 
   // Solutions organized by language
   const [solutions, setSolutions] = useState({
@@ -96,8 +71,8 @@ function EditQuestionContent() {
   const getDefaultSolution = (language) => {
     const templates = {
       python: 'def solution():\n    # Write your solution here\n    pass',
-      c: '#include <stdio.h>\n\nint main() {\n    // Write your solution here\n    return 0;\n}',
-      cpp: '#include <iostream>\n\nint main() {\n    // Write your solution here\n    return 0;\n}',
+      c: '#include <stdio.h>\n\nint main() {\n    // Write your code here\n    return 0;\n}',
+      cpp: '#include <iostream>\n\nint main() {\n    // Write your code here\n    return 0;\n}',
       java: 'class Solution {\n    public static void main(String[] args) {\n        // Write your code here\n    }\n}'
     };
     return {
@@ -107,19 +82,6 @@ function EditQuestionContent() {
       timeComplexity: '',
       approach: ''
     };
-  };
-
-  // Handle language tab change
-  const handleLanguageTabChange = (language) => {
-    setSelectedLanguage(language);
-
-    // Initialize solutions for the selected language if they don't exist
-    if (!solutions[language]) {
-      setSolutions({
-        ...solutions,
-        [language]: [getDefaultSolution(language)]
-      });
-    }
   };
 
   // Add a solution for the current language
@@ -172,41 +134,64 @@ function EditQuestionContent() {
     }
   };
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-      if (user) {
-        // Fetch topics
-        const topicsRef = ref(db, `users/${user.uid}/topics`);
-        get(topicsRef).then((snapshot) => {
-          if (snapshot.exists()) {
-            const topicsData = Object.values(snapshot.val());
-            setTopics([...topicsData, 'Others']);
-          }
-        });
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+  // Handle language tab change
+  const handleLanguageTabChange = (language) => {
+    setSelectedLanguage(language);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const finalTopic = showCustomTopic ? customTopic : topic;
+      const questionData = {
+        title,
+        description,
+        examples,
+        constraints,
+        topic: finalTopic,
+        difficulty,
+        questionLink,
+        updatedAt: new Date().toISOString()
+      };
+
+      const questionRef = ref(db, `public/questions/${questionId}`);
+      await update(questionRef, questionData);
+
+      setNotification({
+        show: true,
+        message: 'Question updated successfully!',
+        type: 'success'
+      });
+
+      setTimeout(() => {
+        router.back();
+      }, 1500);
+    } catch (error) {
+      console.error('Error updating question:', error);
+      setNotification({
+        show: true,
+        message: 'Failed to update question. Please try again.',
+        type: 'error'
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchQuestion = async () => {
-      if (!user) return;
-
-      const params = new URLSearchParams(window.location.search);
-      const questionId = params.get('id');
       if (!questionId) {
-        router.push('/');
+        console.log('Missing question ID');
         return;
       }
 
-      setQuestionId(questionId);
-      const questionRef = ref(db, `users/${user.uid}/questions/${questionId}`);
-
       try {
+        console.log('Fetching question data...');
+        const questionRef = ref(db, `public/questions/${questionId}`);
         const snapshot = await get(questionRef);
+        
         if (snapshot.exists()) {
+          console.log('Question data found:', snapshot.val());
           const questionData = snapshot.val();
+          
           setTitle(questionData.title || '');
           setDescription(questionData.description || '');
           setExamples(questionData.examples || '');
@@ -215,30 +200,20 @@ function EditQuestionContent() {
           setDifficulty(questionData.difficulty || 'Easy');
           setQuestionLink(questionData.questionLink || '');
 
-          // Handle empty_code structure
-          if (questionData.empty_code) {
-            if (typeof questionData.empty_code === 'string') {
-              // Handle old format (string)
-              setEmptyCode({
-                ...emptyCode,
-                python: questionData.empty_code
-              });
-            } else {
-              // Handle new format (object with language keys)
-              setEmptyCode({
-                python: 'def solution():\n    # Write your code here\n    pass',
-                c: '#include <stdio.h>\n\nint main() {\n    // Write your code here\n    return 0;\n}',
-                cpp: '#include <iostream>\n\nint main() {\n    // Write your code here\n    return 0;\n}',
-                java: 'class Solution {\n    public static void main(String[] args) {\n        // Write your code here\n    }\n}',
-                ...questionData.empty_code
-              });
+          // Fetch topics from public/topics
+          const topicsRef = ref(db, 'public/topics');
+          const topicsSnapshot = await get(topicsRef);
+          if (topicsSnapshot.exists()) {
+            const publicTopics = Object.values(topicsSnapshot.val());
+            if (!publicTopics.includes(questionData.topic)) {
+              setShowCustomTopic(true);
+              setCustomTopic(questionData.topic);
             }
+            setTopics([...publicTopics, 'Others']);
           }
 
-          // Handle solutions structure
           if (questionData.solutions) {
             if (Array.isArray(questionData.solutions)) {
-              // Handle old format (array of solutions)
               setSolutions({
                 python: questionData.solutions.map(solution => ({
                   ...solution,
@@ -246,21 +221,22 @@ function EditQuestionContent() {
                 }))
               });
             } else {
-              // Handle new format (object with language keys)
               setSolutions(questionData.solutions);
             }
-          } else {
-            // Default empty solutions
-            setSolutions({
-              python: [{
-                language: 'python',
-                title: '',
-                code: 'def solution():\n    # Write your solution here\n    pass',
-                timeComplexity: '',
-                approach: ''
-              }]
-            });
           }
+
+          if (questionData.empty_code) {
+            setEmptyCode(questionData.empty_code);
+          }
+
+        } else {
+          console.log('Question not found');
+          setNotification({
+            show: true,
+            message: 'Question not found',
+            type: 'error'
+          });
+          router.push('/admin');
         }
       } catch (error) {
         console.error('Error fetching question:', error);
@@ -275,107 +251,48 @@ function EditQuestionContent() {
     };
 
     fetchQuestion();
-  }, [user, router]);
+  }, [questionId, router]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (!auth.currentUser) return;
 
-    if (!auth.currentUser) {
-      setNotification({
-        show: true,
-        message: 'Please login to update questions',
-        type: 'error'
+    const publicTopicsRef = ref(db, 'public/topics');
+    const userTopicsRef = ref(db, `users/${auth.currentUser.uid}/topics`);
+
+    Promise.all([
+      get(publicTopicsRef),
+      get(userTopicsRef)
+    ]).then(([publicSnapshot, userSnapshot]) => {
+      const publicTopics = publicSnapshot.exists() ? Object.values(publicSnapshot.val()) : [];
+      const userTopics = userSnapshot.exists() ? Object.values(userSnapshot.val()) : [];
+
+      // Merge topics and remove duplicates
+      const allTopics = [...new Set([...publicTopics, ...userTopics, 'Others'])].sort((a, b) => {
+        if (a === 'Others') return 1; // Keep 'Others' at the end
+        if (b === 'Others') return -1;
+        return a.localeCompare(b); // Sort alphabetically
       });
-      return;
-    }
-
-    if (!title || !description || !topic) {
-      setNotification({
-        show: true,
-        message: 'Title, description, and topic are required',
-        type: 'error'
-      });
-      return;
-    }
-
-    try {
-      // Process solutions by language
-      const processedSolutions = {};
-
-      // First, reorganize solutions by their language property
-      const solutionsByLanguage = {};
-
-      // Go through each language tab
-      Object.keys(solutions).forEach(langTab => {
-        // Go through each solution in this tab
-        solutions[langTab].forEach(solution => {
-          // Use the solution's language property (which might be different from the tab)
-          const lang = solution.language;
-
-          if (!solutionsByLanguage[lang]) {
-            solutionsByLanguage[lang] = [];
-          }
-
-          solutionsByLanguage[lang].push(solution);
-        });
-      });
-
-      // Now process the reorganized solutions
-      Object.keys(solutionsByLanguage).forEach(language => {
-        // Skip languages with no solutions
-        if (!solutionsByLanguage[language] || solutionsByLanguage[language].length === 0) return;
-
-        // Add valid solutions to processed solutions
-        processedSolutions[language] = solutionsByLanguage[language];
-      });
-
-      const questionData = {
-        title,
-        questionLink,
-        description,
-        examples,
-        constraints,
-        topic: showCustomTopic ? customTopic : topic,
-        difficulty,
-        empty_code: emptyCode,
-        solutions: Object.keys(processedSolutions).length > 0 ? processedSolutions : null,
-        updatedAt: Date.now()
-      };
-
-      const questionRef = ref(db, `users/${user.uid}/questions/${questionId}`);
-      await update(questionRef, questionData);
-
-      setNotification({
-        show: true,
-        message: 'Question updated successfully!',
-        type: 'success'
-      });
-
-      // Wait a moment for the notification to be seen before redirecting
-      setTimeout(() => {
-        router.push(`/${createSlug(topic)}/${createSlug(title)}`);
-      }, 1500);
-    } catch (error) {
-      setNotification({
-        show: true,
-        message: 'Failed to update question. Please try again.',
-        type: 'error'
-      });
-      console.error('Error updating question:', error);
-    }
-  };
+      setTopics(allTopics);
+    }).catch(error => {
+      console.error("Error fetching topics:", error);
+      setTopics(['Others']);
+    });
+  }, []);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen p-8 flex flex-col justify-center items-center bg-[#111827]">
+      <div className="min-h-screen p-8 flex flex-col justify-center items-center bg-[#0a0a0a]">
         <HashLoader color="#9333ea" size={50} />
         <p className="mt-4 text-sm text-gray-400">Loading question editor...</p>
+        <p className="mt-2 text-xs text-gray-500">Question ID: {questionId}</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-4 sm:p-8 bg-[#111827] text-gray-200">
+    <div className="min-h-screen bg-[#0a0a0a] text-gray-200">
+      <Breadcrumbs />
+      
       {/* Show notification if it's active */}
       {notification.show && (
         <Notification
@@ -385,12 +302,10 @@ function EditQuestionContent() {
         />
       )}
 
-      <div className="max-w-4xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold text-center mb-8">Edit Question</h1>
-
+      <div className="max-w-4xl mx-auto p-4 sm:p-8 space-y-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title & Topic Section */}
-          <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-700/50">
+          <div className="bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-700/50">
             <div className="p-6 space-y-6">
               {/* Title Input */}
               <div className="w-full">
@@ -489,16 +404,16 @@ function EditQuestionContent() {
           </div>
 
           {/* Description Section */}
-          <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6">
+          <div className="bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6">
             <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
             <div className="relative">
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full h-[250px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3
+                className="w-full h-[250px] bg-[#111827] border border-gray-700 rounded-xl px-4 py-3
                   text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2
                   focus:ring-purple-500/50 focus:border-transparent resize-none
-                  transition-all duration-200 hover:bg-gray-900/70
+                  transition-all duration-200 hover:bg-[#1a2438]
                   hover:border-gray-600 backdrop-blur-sm
                   shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]
                   hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
@@ -512,21 +427,20 @@ function EditQuestionContent() {
           </div>
 
           {/* Examples Section */}
-          <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6">
+          <div className="bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6">
             <label className="block text-sm font-medium text-gray-300 mb-2">Examples</label>
             <div className="relative">
               <textarea
                 value={examples}
                 onChange={(e) => setExamples(e.target.value)}
-                className="w-full h-[200px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3
+                className="w-full h-[200px] bg-[#111827] border border-gray-700 rounded-xl px-4 py-3
                   text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2
                   focus:ring-purple-500/50 focus:border-transparent resize-none
-                  transition-all duration-200 hover:bg-gray-900/70
+                  transition-all duration-200 hover:bg-[#1a2438]
                   hover:border-gray-600 backdrop-blur-sm
                   shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]
                   hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
-                placeholder="Enter examples (markdown supported)..."
-                required
+                placeholder="Enter examples..."
               />
               <div className="absolute right-3 bottom-3 px-2 py-1 bg-gray-900/50 rounded-md text-xs text-gray-500">
                 Markdown supported
@@ -535,21 +449,20 @@ function EditQuestionContent() {
           </div>
 
           {/* Constraints Section */}
-          <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6">
+          <div className="bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6">
             <label className="block text-sm font-medium text-gray-300 mb-2">Constraints</label>
             <div className="relative">
               <textarea
                 value={constraints}
                 onChange={(e) => setConstraints(e.target.value)}
-                className="w-full h-[150px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3
+                className="w-full h-[200px] bg-[#111827] border border-gray-700 rounded-xl px-4 py-3
                   text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2
                   focus:ring-purple-500/50 focus:border-transparent resize-none
-                  transition-all duration-200 hover:bg-gray-900/70
+                  transition-all duration-200 hover:bg-[#1a2438]
                   hover:border-gray-600 backdrop-blur-sm
                   shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]
                   hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
-                placeholder="Enter constraints (markdown supported)..."
-                required
+                placeholder="Enter constraints..."
               />
               <div className="absolute right-3 bottom-3 px-2 py-1 bg-gray-900/50 rounded-md text-xs text-gray-500">
                 Markdown supported
@@ -790,7 +703,7 @@ function EditQuestionContent() {
 export default function EditQuestionPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen p-8 flex flex-col justify-center items-center bg-[#111827]">
+      <div className="min-h-screen p-8 flex flex-col justify-center items-center bg-[#0a0a0a]">
         <HashLoader color="#9333ea" size={50} />
         <p className="mt-4 text-sm text-gray-400">Preparing editor...</p>
       </div>

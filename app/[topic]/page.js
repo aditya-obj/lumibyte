@@ -5,7 +5,7 @@ import { auth, db } from '@/components/firebase.config';
 import { ref, get } from 'firebase/database';
 import { PulseLoader } from 'react-spinners';
 import QuestionCard from '@/components/QuestionCard';
-import { createSlug } from '@/utils/slugUtils';
+import { createSlug } from '@/utils/helpers';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import React from 'react';
 

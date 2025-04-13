@@ -21,7 +21,6 @@ export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
   const [hasImported, setHasImported] = useState(false);
-  const [needsSolutions, setNeedsSolutions] = useState(false);
   const [hasNewQuestionsToImport, setHasNewQuestionsToImport] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isRandomizing, setIsRandomizing] = useState(false);
@@ -58,15 +57,10 @@ export default function Home() {
         
         if (snapshot.exists()) {
           const questionsData = [];
-          let needsSolutionsFlag = false;
 
           snapshot.forEach((childSnapshot) => {
             const question = childSnapshot.val();
             
-            if (!question.solutions || !question.empty_code) {
-              needsSolutionsFlag = true;
-            }
-
             questionsData.push({
               id: childSnapshot.key,
               title: question.title,
@@ -78,7 +72,6 @@ export default function Home() {
             });
           });
 
-          setNeedsSolutions(needsSolutionsFlag);
           setQuestions(questionsData);
 
           // Extract unique topics
@@ -422,7 +415,6 @@ export default function Home() {
                   </Link>
                 )}
 
-                {/* Show Import Questions OR Add Solutions button */}
                 {hasNewQuestionsToImport && (
                   <button 
                     onClick={handleImportQuestions}
@@ -446,18 +438,6 @@ export default function Home() {
                       </>
                     )}
                   </button>
-                )}
-
-                {needsSolutions && (
-                  <Link 
-                    href="/edit/solutions"
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(234,179,8,0.5)] hover:-translate-y-1"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Add Solutions
-                  </Link>
                 )}
               </div>
             )}

@@ -42,36 +42,36 @@ export default function Breadcrumbs({ previousPath }) {
         crumbs.push({ label: 'Dashboard', path: '/dashboard' });
       }
       
-      // Handle admin route
-      else if (pathname === '/admin') {
+      // Handle admin routes
+      else if (pathname.startsWith('/admin')) {
         crumbs.push({ label: 'Admin', path: '/admin' });
-      }
-      
-      // Handle question routes
-      else if (pathname.includes('/admin/questions')) {
-        crumbs.push(
-          { label: 'Admin', path: '/admin' },
-          { label: 'Questions', path: '/admin/questions' }
-        );
-      }
-      
-      // Handle edit route for questions
-      else if (pathSegments.length === 3 && pathSegments[2] === 'edit') {
-        const [topic, questionTitle] = pathSegments;
-        crumbs.push(
-          { 
-            label: formatQuestionTitle(topic), 
-            path: `/${topic}` 
-          },
-          { 
-            label: formatQuestionTitle(questionTitle), 
-            path: `/${topic}/${questionTitle}` 
-          },
-          { 
-            label: 'Edit', 
-            path: pathname 
-          }
-        );
+        
+        // Handle admin/[topic]/[questionTitle] route
+        if (pathSegments.length === 3) {
+          const [_, topic, questionTitle] = pathSegments;
+          crumbs.push(
+            { 
+              label: formatQuestionTitle(topic), 
+              path: `/admin/${topic}` 
+            },
+            { 
+              label: formatQuestionTitle(questionTitle), 
+              path: `/admin/${topic}/${questionTitle}` 
+            }
+          );
+        }
+        // Handle admin/[topic] route
+        else if (pathSegments.length === 2 && pathSegments[1] !== 'questions') {
+          const [_, topic] = pathSegments;
+          crumbs.push({
+            label: formatQuestionTitle(topic),
+            path: `/admin/${topic}`
+          });
+        }
+        // Handle admin/questions route
+        else if (pathSegments[1] === 'questions') {
+          crumbs.push({ label: 'Questions', path: '/admin/questions' });
+        }
       }
       
       // Handle topic route
