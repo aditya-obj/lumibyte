@@ -1,43 +1,66 @@
 'use client';
 import { auth, db } from '@/components/firebase.config';
-import Editor from '@monaco-editor/react';
-import { get, push, ref, set } from 'firebase/database';
+import Editor, { loader } from '@monaco-editor/react';
+import { get, push, ref, set, update } from 'firebase/database';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-
-// Notification component
-const Notification = ({ message, type, onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-    <div className={`fixed top-4 right-4 z-50 max-w-md px-4 py-3 rounded-lg shadow-lg transition-all duration-300 transform translate-x-0 ${type === 'error' ? 'bg-red-500/90' : 'bg-green-500/90'}`}>
-      <div className="flex items-center space-x-3">
-        {type === 'error' ? (
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        ) : (
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        )}
-        <p className="text-white font-medium">{message}</p>
-        <button onClick={onClose} className="text-white hover:text-gray-200">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  );
-};
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 export default function AdminQuestionsPage() {
+  useEffect(() => {
+    // Configure Monaco loader with all required languages
+    loader.config({
+      paths: {
+        vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/min/vs'
+      },
+      'vs/nls': {
+        availableLanguages: {
+          '*': 'de'
+        }
+      }
+    });
+
+    // Ensure languages are loaded
+    loader.init().then(monaco => {
+      // Register additional language features if needed
+      ['python', 'cpp', 'java', 'c'].forEach(lang => {
+        monaco.languages.register({ id: lang });
+      });
+    });
+  }, []); // Empty dependency array means this runs once when component mounts
+
+  // Notification component
+  const Notification = ({ message, type, onClose }) => {
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+      <div className={`fixed top-4 right-4 z-50 max-w-md px-4 py-3 rounded-lg shadow-lg transition-all duration-300 transform translate-x-0 ${type === 'error' ? 'bg-red-500/90' : 'bg-green-500/90'}`}>
+        <div className="flex items-center space-x-3">
+          {type === 'error' ? (
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+          <p className="text-white font-medium">{message}</p>
+          <button onClick={onClose} className="text-white hover:text-gray-200">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -49,6 +72,8 @@ export default function AdminQuestionsPage() {
   const [topics, setTopics] = useState(['Others']);
   const [difficulty, setDifficulty] = useState('Easy');
   const [questionLink, setQuestionLink] = useState('');
+  const [existingQuestions, setExistingQuestions] = useState([]);
+  
 
   // Notification state
   const [notification, setNotification] = useState({ show: false, message: '', type: 'error' });
@@ -68,7 +93,7 @@ export default function AdminQuestionsPage() {
   // Solutions organized by language
   const [solutions, setSolutions] = useState({
     python: [{
-      language: 'python', // Track language for each solution
+      language: 'python',
       title: '',
       code: 'def solution():\n    # Write your solution here\n    pass',
       timeComplexity: '',
@@ -76,10 +101,91 @@ export default function AdminQuestionsPage() {
     }]
   });
 
+  // Add isEdit state
+  const [isEdit, setIsEdit] = useState(false);
+  const [editId, setEditId] = useState(null);
+
+  // Add these configurations for Monaco Editor
+  const editorOptions = {
+    minimap: { enabled: false },
+    fontSize: 14,
+    scrollBeyondLastLine: false,
+    padding: { top: 10, bottom: 10 },
+    automaticLayout: true,
+    wordWrap: 'on',
+    lineNumbers: 'on',
+    renderLineHighlight: 'gutter',
+    formatOnPaste: true,
+    formatOnType: true,
+    semanticHighlighting: true,
+    bracketPairColorization: {
+      enabled: true
+    },
+    'semanticTokenColorCustomizations': {
+      enabled: true
+    }
+  };
+
+  useEffect(() => {
+    // Check URL parameters for edit mode
+    const params = new URLSearchParams(window.location.search);
+    const isEditMode = params.get('edit') === 'true';
+    const questionId = params.get('id');
+
+    if (isEditMode && questionId) {
+      setIsEdit(true);
+      setEditId(questionId);
+      loadQuestionData(questionId);
+    }
+  }, []);
+
+  const loadQuestionData = async (questionId) => {
+    try {
+      const questionRef = ref(db, `public/questions/${questionId}`);
+      const snapshot = await get(questionRef);
+      
+      if (snapshot.exists()) {
+        const questionData = snapshot.val();
+        
+        // Populate form fields with existing data
+        setTitle(questionData.title || '');
+        setDescription(questionData.description || '');
+        setExamples(questionData.examples || '');
+        setConstraints(questionData.constraints || '');
+        setTopic(questionData.topic || '');
+        setDifficulty(questionData.difficulty || 'Easy');
+        setQuestionLink(questionData.questionLink || '');
+        
+        // Handle empty code
+        if (questionData.empty_code) {
+          setEmptyCode(questionData.empty_code);
+        }
+
+        // Handle solutions
+        if (questionData.solutions) {
+          setSolutions(questionData.solutions);
+        }
+
+        // Handle custom topic
+        if (!topics.includes(questionData.topic)) {
+          setShowCustomTopic(true);
+          setCustomTopic(questionData.topic);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading question:', error);
+      setNotification({
+        show: true,
+        message: 'Error loading question data',
+        type: 'error'
+      });
+    }
+  };
+
   // Check if user is admin
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (!user || user.uid !== 'Vl8iVtOQo9PZrVNKH0zG65yCWv22') {
+      if (!user || user.uid !== process.env.NEXT_PUBLIC_USER_UID) {
         window.location.href = '/'; // Redirect non-admin users
       }
     });
@@ -97,6 +203,32 @@ export default function AdminQuestionsPage() {
         setTopics(['Others']);
       }
     });
+  }, []);
+
+  // Load existing questions on component mount
+  useEffect(() => {
+    const fetchExistingQuestions = async () => {
+      try {
+        const questionsRef = ref(db, 'public/questions');
+        const snapshot = await get(questionsRef);
+        if (snapshot.exists()) {
+          const questions = Object.entries(snapshot.val()).map(([id, data]) => ({
+            id,
+            ...data
+          }));
+          setExistingQuestions(questions);
+        }
+      } catch (error) {
+        console.error('Error fetching questions:', error);
+        setNotification({
+          show: true,
+          message: 'Error fetching existing questions',
+          type: 'error'
+        });
+      }
+    };
+
+    fetchExistingQuestions();
   }, []);
 
   // Get default solution template based on language
@@ -170,19 +302,20 @@ export default function AdminQuestionsPage() {
   // Update a solution for the current language
   const updateSolution = (index, field, value) => {
     const currentLangSolutions = [...(solutions[selectedLanguage] || [])];
-    if (currentLangSolutions[index]) {
-      currentLangSolutions[index][field] = value;
-      setSolutions({
-        ...solutions,
-        [selectedLanguage]: currentLangSolutions
-      });
+    if (!currentLangSolutions[index]) {
+      currentLangSolutions[index] = getDefaultSolution(selectedLanguage);
     }
+    currentLangSolutions[index][field] = value;
+    setSolutions({
+      ...solutions,
+      [selectedLanguage]: currentLangSolutions
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!auth.currentUser || auth.currentUser.uid !== 'Vl8iVtOQo9PZrVNKH0zG65yCWv22') {
+    if (!auth.currentUser || auth.currentUser.uid !== process.env.NEXT_PUBLIC_USER_UID) {
       setNotification({
         show: true,
         message: 'Unauthorized access',
@@ -191,217 +324,70 @@ export default function AdminQuestionsPage() {
       return;
     }
 
-    const finalTopic = showCustomTopic ? customTopic : topic;
-    if (!finalTopic) {
-      setNotification({
-        show: true,
-        message: 'Please select or enter a topic.',
-        type: 'error'
-      });
-      return;
-    }
-
-    // Validation for empty_code (required)
-    const hasEmptyLanguage = Object.values(emptyCode).some(code => !code.trim());
-    if (hasEmptyLanguage) {
-      setNotification({
-        show: true,
-        message: 'Starter code is required for all languages',
-        type: 'error'
-      });
-      return;
-    }
-
     try {
-      // Add new topic to public topics if it's custom
-      if (showCustomTopic && customTopic) {
-        const topicsRef = ref(db, 'public/topics');
-        const topicId = customTopic.toLowerCase().replace(/[^a-z0-9]/g, '-');
-
-        const snapshot = await get(topicsRef);
-        const existingTopics = snapshot.val() || {};
-
-        if (!Object.values(existingTopics).includes(customTopic)) {
-          const updates = { ...existingTopics };
-          updates[topicId] = customTopic;
-          await set(topicsRef, updates);
-          setTopics(prevTopics => {
-            const newTopics = [...prevTopics.filter(t => t !== 'Others'), customTopic, 'Others'];
-            return newTopics;
-          });
-        }
-      }
-
-      // Process solutions by language
-      const processedSolutions = {};
-      let hasIncompleteSolution = false;
-
-      // First, reorganize solutions by their language property
-      const solutionsByLanguage = {};
-
-      // Go through each language tab
-      Object.keys(solutions).forEach(langTab => {
-        // Go through each solution in this tab
-        solutions[langTab].forEach(solution => {
-          // Use the solution's language property (which might be different from the tab)
-          const lang = solution.language;
-
-          if (!solutionsByLanguage[lang]) {
-            solutionsByLanguage[lang] = [];
-          }
-
-          solutionsByLanguage[lang].push(solution);
-        });
-      });
-
-      // Now process the reorganized solutions
-      Object.keys(solutionsByLanguage).forEach(language => {
-        // Skip languages with no solutions
-        if (!solutionsByLanguage[language] || solutionsByLanguage[language].length === 0) return;
-
-        // Get default code template for this language
-        const defaultTemplate = getDefaultSolution(language).code;
-
-        // Filter out empty solutions for this language
-        const validSolutionsForLang = solutionsByLanguage[language].filter(solution =>
-          solution.title.trim() ||
-          solution.code.trim() !== defaultTemplate ||
-          solution.timeComplexity.trim() ||
-          solution.approach.trim()
-        );
-
-        // Check for incomplete solutions
-        const hasIncompleteForLang = validSolutionsForLang.some(solution =>
-          (solution.title || solution.code || solution.timeComplexity) &&
-          (!solution.title.trim() || !solution.code.trim() || !solution.timeComplexity.trim())
-        );
-
-        if (hasIncompleteForLang) {
-          hasIncompleteSolution = true;
-        }
-
-        // Add valid solutions to processed solutions
-        if (validSolutionsForLang.length > 0) {
-          processedSolutions[language] = validSolutionsForLang;
-        }
-      });
-
-      if (hasIncompleteSolution) {
-        setNotification({
-          show: true,
-          message: 'Please complete all required fields (Title, Code, Time Complexity) for each solution or remove incomplete solutions',
-          type: 'error'
-        });
-        return;
-      }
-
-      // Add question to public questions
       const questionData = {
         title,
         description,
         examples,
         constraints,
-        topic: finalTopic,
+        topic: showCustomTopic ? customTopic : topic,
         difficulty,
         empty_code: emptyCode,
-        solutions: Object.keys(processedSolutions).length > 0 ? processedSolutions : null,
-        createdAt: Date.now(),
+        solutions,
+        updatedAt: Date.now(),
         questionLink
       };
 
-      const questionsRef = ref(db, 'public/questions');
-      await push(questionsRef, questionData);
+      if (isEdit && editId) {
+        // Update existing question
+        await update(ref(db, `public/questions/${editId}`), questionData);
+        setNotification({
+          show: true,
+          message: 'Question updated successfully!',
+          type: 'success'
+        });
+      } else {
+        // Create new question
+        questionData.createdAt = Date.now();
+        const questionsRef = ref(db, 'public/questions');
+        await push(questionsRef, questionData);
+        setNotification({
+          show: true,
+          message: 'Question added successfully!',
+          type: 'success'
+        });
+      }
 
-      // Show success notification
+      // Redirect after success
+      setTimeout(() => {
+        router.push('/admin');
+      }, 1500);
+
+    } catch (error) {
+      console.error('Error saving question:', error);
       setNotification({
         show: true,
-        message: 'Question added successfully!',
-        type: 'success'
-      });
-
-      // Reset form fields
-      setTitle('');
-      setDescription('');
-      setExamples('');
-      setConstraints('');
-      setTopic('');
-      setCustomTopic('');
-      setShowCustomTopic(false);
-      setDifficulty('Easy');
-      setSelectedLanguage('python');
-      // Reset solutions to only have Python with an empty solution
-      setSolutions({
-        python: [{
-          language: 'python',
-          title: '',
-          code: 'def solution():\n    # Write your solution here\n    pass',
-          timeComplexity: '',
-          approach: ''
-        }]
-      });
-      setQuestionLink('');
-
-      window.scrollTo(0, 0);
-    } catch (err) {
-      setNotification({
-        show: true,
-        message: 'Failed to add question. Please try again.',
+        message: isEdit ? 'Error updating question' : 'Error creating question',
         type: 'error'
       });
-      console.error('Error adding question:', err);
     }
   };
 
+  // Update page title based on mode
+  const pageTitle = isEdit ? 'Edit Question' : 'Create New Question';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-[#0f172a] to-gray-900">
-      {/* Show notification if it's active */}
-      {notification.show && (
-        <Notification
-          message={notification.message}
-          type={notification.type}
-          onClose={() => setNotification({ ...notification, show: false })}
-        />
-      )}
-
-      {/* Animated background gradients */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute w-[500px] h-[500px] top-1/4 -left-24 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute w-[400px] h-[400px] bottom-0 right-0 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-      </div>
-
+    <div className="min-h-screen bg-[#0a0a0a]">
+      <Breadcrumbs />
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Header Section */}
         <div className="mb-8 sm:mb-12">
-          <div className="flex items-center gap-4 sm:gap-6">
-            <div className="back-button-container">
-              <button
-                onClick={() => router.back()}
-                className="universal-back-button"
-                aria-label="Go back"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M19 12H5M12 19l-7-7 7-7"/>
-                </svg>
-                <span>Back</span>
-              </button>
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
-                Create New Question
-              </h1>
-              <p className="mt-2 text-sm sm:text-base text-gray-400">
-                Add a new coding challenge to the public question bank
-              </p>
-            </div>
-          </div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+            {pageTitle}
+          </h1>
+          <p className="mt-2 text-sm sm:text-base text-gray-400">
+            {isEdit ? 'Edit an existing coding challenge' : 'Add a new coding challenge to the public question bank'}
+          </p>
         </div>
 
         {/* Main Form */}
@@ -629,15 +615,17 @@ export default function AdminQuestionsPage() {
                       });
                     }}
                     theme="vs-dark"
-                    options={{
-                      minimap: { enabled: false },
-                      fontSize: 14,
-                      scrollBeyondLastLine: false,
-                      padding: { top: 10, bottom: 10 },
-                      automaticLayout: true,
-                      wordWrap: 'on',
-                      lineNumbers: 'on',
-                      renderLineHighlight: 'gutter',
+                    options={editorOptions}
+                    beforeMount={(monaco) => {
+                      // Configure language features
+                      monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+                        noSemanticValidation: false,
+                        noSyntaxValidation: false,
+                      });
+                      monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+                        target: monaco.languages.typescript.ScriptTarget.Latest,
+                        allowNonTsExtensions: true,
+                      });
                     }}
                   />
                 </div>
@@ -779,17 +767,20 @@ export default function AdminQuestionsPage() {
                         <div className="rounded-xl overflow-hidden border border-gray-700">
                           <Editor
                             height="300px"
-                            defaultLanguage={solution.language}
-                            value={solution.code}
+                            defaultLanguage={(solution?.language || selectedLanguage || 'python').toLowerCase()}
+                            value={solution?.code || ''}
                             onChange={(value) => updateSolution(index, 'code', value)}
                             theme="vs-dark"
-                            options={{
-                              minimap: { enabled: false },
-                              fontSize: 14,
-                              scrollBeyondLastLine: false,
-                              wordWrap: 'on',
-                              lineNumbers: 'on',
-                              renderLineHighlight: 'gutter',
+                            options={editorOptions}
+                            beforeMount={(monaco) => {
+                              // Configure language features for each language
+                              const lang = (solution?.language || selectedLanguage || 'python').toLowerCase();
+                              if (lang === 'python') {
+                                monaco.languages.python?.setDefaults({
+                                  validate: true,
+                                  format: true
+                                });
+                              }
                             }}
                           />
                         </div>
@@ -817,7 +808,7 @@ export default function AdminQuestionsPage() {
                   transition-all duration-300 transform hover:-translate-y-1
                   focus:outline-none focus:ring-2 focus:ring-purple-500/50"
               >
-                Create Question
+                {isEdit ? 'Update Question' : 'Create Question'}
               </button>
             </div>
           </div>

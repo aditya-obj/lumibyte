@@ -10,6 +10,8 @@ import React, { useEffect, useState } from 'react';
 import { MdFullscreen, MdFullscreenExit } from 'react-icons/md';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { PulseLoader } from 'react-spinners';
+import Breadcrumbs from '@/components/Breadcrumbs';
+import Link from 'next/link';
 
 // Add the splitExamples function at the top level
 const splitExamples = (examples) => {
@@ -384,94 +386,57 @@ export default function QuestionPage({ params }) {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
+      <Breadcrumbs previousPath={previousPath} />
       {/* Top Navigation Bar */}
-      <nav className="bg-[#1a1a1a] border-b border-[#2a2a2a] sticky top-0 z-50">
-        <div className="max-w-[1920px] mx-auto px-4 py-2 h-14 sm:h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <button
-              onClick={() => router.push(previousPath)}
-              className="universal-back-button"
-              aria-label="Go back"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
-              </svg>
-              <span>Back</span>
-            </button>
-            <h1 className="text-gray-200 font-medium truncate text-sm sm:text-base">
-              {question?.title}
-            </h1>
-          </div>
 
-          <div className="flex items-center gap-2">
-            {/* Mobile View/Edit Toggle */}
-            <div className="lg:hidden">
-              <button
-                onClick={() => setMobileView(prev => prev === 'description' ? 'editor' : 'description')}
-                className="px-3 py-1.5 bg-gray-800 text-gray-300 rounded-lg text-sm font-medium cursor-pointer"
-              >
-                {mobileView === 'description' ? 'Editor' : 'Problem'}
-              </button>
-            </div>
-
-            {/* Edit Button */}
-            <button
-              onClick={() => router.push(`/edit/question?id=${question.id}`)}
-              className="px-3 py-1.5 bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              <span className="hidden sm:inline">Edit</span>
-            </button>
-
-            {/* Mark as Revised Button */}
-            <button
-              onClick={handleRevision}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer
-                ${question?.lastRevised
-                  ? 'bg-purple-500/10 text-purple-400'
-                  : 'bg-green-500/10 text-green-400'}`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="hidden sm:inline">{question?.lastRevised ? 'Revised' : 'Mark as Revised'}</span>
-            </button>
-          </div>
-        </div>
-      </nav>
 
       {/* Problem Info Bar - Sticky on mobile */}
       <div className="sticky top-14 sm:top-16 z-40 bg-[#0a0a0a] py-2 lg:py-4 px-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className={`px-2 py-1 rounded-md text-xs font-medium
-            ${question?.difficulty?.toLowerCase() === 'easy'
-              ? 'bg-green-500/10 text-green-500'
-              : question?.difficulty?.toLowerCase() === 'medium'
-              ? 'bg-yellow-500/10 text-yellow-500'
-              : 'bg-red-500/10 text-red-500'}`}>
-            {question?.difficulty}
+        <div className="flex flex-wrap items-center justify-between">
+          {/* Left side - Difficulty and Topic */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className={`px-2 py-1 rounded-md text-xs font-medium
+              ${question?.difficulty?.toLowerCase() === 'easy'
+                ? 'bg-green-500/10 text-green-500'
+                : question?.difficulty?.toLowerCase() === 'medium'
+                ? 'bg-yellow-500/10 text-yellow-500'
+                : 'bg-red-500/10 text-red-500'}`}>
+              {question?.difficulty}
+            </div>
+            <div className="px-2 py-1 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400">
+              {question?.topic}
+            </div>
           </div>
-          <div className="px-2 py-1 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400">
-            {question?.topic}
-          </div>
-          {question?.lastRevised && (
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-purple-500/10 text-purple-400">
+
+          {/* Right side - Revise and Edit buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRevision}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium 
+                ${question?.lastRevised 
+                  ? 'bg-purple-500/10 text-purple-400 hover:bg-purple-500/20' 
+                  : 'bg-gray-500/10 text-gray-400 hover:bg-gray-500/20'} 
+                transition-colors`}
+            >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>{formatDate(question.lastRevised)}</span>
-            </div>
-          )}
+              {question?.lastRevised ? 'Revised' : 'Mark as Revised'}
+            </button>
+
+            {user && (
+              <Link
+                href={`/edit/question?id=${question?.id}`}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium 
+                  bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
