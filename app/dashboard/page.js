@@ -237,24 +237,30 @@ export default function Dashboard() {
         {/* View Switch - Only show if not loading and there are questions */}
         {!loading && questions.length > 0 && (
           <div className="mt-8 flex justify-center">
-            <div className="inline-flex bg-gray-900/60 border border-gray-700 p-1 rounded-lg shadow-sm">
+            <div className="inline-flex bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 p-1.5 rounded-2xl shadow-lg">
               <button
                 onClick={() => setView('all')}
-                className={`px-5 py-2 rounded text-sm font-medium transition-all duration-300 ease-in-out cursor-pointer whitespace-nowrap ${
-                  view === 'all' 
-                    ? 'bg-blue-600 text-white shadow-sm' 
-                    : 'text-gray-400 hover:text-gray-100 hover:bg-gray-700/50'
-                }`}
+                className={`
+                  px-6 py-2.5 rounded-xl text-sm font-medium
+                  transition-all duration-300 ease-in-out
+                  ${view === 'all'
+                    ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/70'
+                  }
+                `}
               >
                 All Programs
               </button>
               <button
                 onClick={() => setView('revised')}
-                className={`px-5 py-2 rounded text-sm font-medium transition-all duration-300 ease-in-out cursor-pointer whitespace-nowrap ${
-                  view === 'revised' 
-                    ? 'bg-blue-600 text-white shadow-sm' 
-                    : 'text-gray-400 hover:text-gray-100 hover:bg-gray-700/50'
-                }`}
+                className={`
+                  px-6 py-2.5 rounded-xl text-sm font-medium
+                  transition-all duration-300 ease-in-out
+                  ${view === 'revised'
+                    ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/70'
+                  }
+                `}
               >
                 Recently Revised
               </button>

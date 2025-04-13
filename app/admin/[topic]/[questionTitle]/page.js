@@ -703,9 +703,20 @@ export default function QuestionPage({ params }) {
                           <div className="flex items-center gap-3">
                             <h2 className="text-white font-medium text-sm sm:text-base">Your Solution</h2>
                           </div>
-                          <button className="px-3 sm:px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-md transition-colors cursor-pointer">
-                            Run
-                          </button>
+                          {/* Run button - disabled with tooltip */}
+                          <div className="relative group">
+                            <button
+                              disabled
+                              className="px-3 py-1.5 rounded-md text-sm font-medium 
+                                bg-blue-500/20 text-blue-400/70 hover:cursor-not-allowed"
+                            >
+                              Run
+                            </button>
+                            <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-500 
+                              whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                              Coming soon
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <div className="flex-1 min-h-[400px]">
@@ -834,9 +845,20 @@ export default function QuestionPage({ params }) {
       {/* Mobile Bottom Action Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#1a1a1a] border-t border-[#2a2a2a] px-4 py-3">
         <div className="flex justify-end items-center">
-          <button className="px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg cursor-pointer">
-            Run
-          </button>
+          {/* Run button - disabled with tooltip */}
+          <div className="relative group">
+            <button
+              disabled
+              className="px-3 py-1.5 rounded-md text-sm font-medium 
+                bg-blue-500/20 text-blue-400/70 hover:cursor-not-allowed"
+            >
+              Run
+            </button>
+            <div className="absolute left-1/2 -translate-x-1/2 mt-1 text-[10px] text-gray-500 
+              opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+              Coming soon
+            </div>
+          </div>
         </div>
       </div>
     </div>

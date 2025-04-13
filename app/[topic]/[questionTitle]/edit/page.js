@@ -2,10 +2,10 @@
 import { auth, db } from '@/components/firebase.config';
 import Editor from '@monaco-editor/react';
 import { get, ref, update } from 'firebase/database';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import React from 'react';
-import { HashLoader } from 'react-spinners';
+import Loader from '@/components/Loader';
 import Breadcrumbs from '@/components/Breadcrumbs';
 
 // Notification component
@@ -28,6 +28,7 @@ const Notification = ({ message, type, onClose }) => {
 
 function EditQuestionContent() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const questionId = searchParams.get('id');
   const [user, setUser] = useState(null);
@@ -317,18 +318,16 @@ function EditQuestionContent() {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen p-8 flex flex-col justify-center items-center bg-[#0a0a0a]">
-        <HashLoader color="#9333ea" size={50} />
-        <p className="mt-4 text-sm text-gray-400">Loading question editor...</p>
-        <p className="mt-2 text-xs text-gray-500">Question ID: {questionId}</p>
-      </div>
-    );
+    return <Loader />;
   }
+
+  // Get the path segments without 'edit'
+  const pathSegments = pathname.split('/').filter(segment => segment !== 'edit');
+  const previousPath = pathSegments.join('/');
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-gray-200">
-      <Breadcrumbs />
+      <Breadcrumbs previousPath={previousPath} />
       
       {/* Show notification if it's active */}
       {notification.show && (
@@ -739,12 +738,7 @@ function EditQuestionContent() {
 // Main component with Suspense boundary
 export default function EditQuestionPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen p-8 flex flex-col justify-center items-center bg-[#0a0a0a]">
-        <HashLoader color="#9333ea" size={50} />
-        <p className="mt-4 text-sm text-gray-400">Preparing editor...</p>
-      </div>
-    }>
+    <Suspense fallback={<Loader />}>
       <EditQuestionContent />
     </Suspense>
   );
