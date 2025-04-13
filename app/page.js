@@ -10,6 +10,7 @@ import { BeatLoader } from 'react-spinners';
 import { toast } from 'react-toastify';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { motion } from 'framer-motion';
+import Loader from '@/components/Loader';
 
 export default function Home() {
   const [currentQuestion, setCurrentQuestion] = useState(null);

@@ -6,7 +6,7 @@ import { ref, get, remove } from 'firebase/database';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Breadcrumbs from '@/components/Breadcrumbs';
-import { HashLoader } from 'react-spinners';
+import Loader from '@/components/Loader'; // Import the new Loader
 import { createSlug } from '@/utils/helpers';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 
@@ -98,15 +98,7 @@ export default function Administration() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a]">
-        <Breadcrumbs />
-        <div className="flex flex-col items-center justify-center p-8">
-          <HashLoader color="#9333ea" size={50} />
-          <p className="mt-4 text-sm text-gray-400">Loading questions...</p>
-        </div>
-      </div>
-    );
+    return <Loader />; // Replace the existing loader with new Loader component
   }
 
   return (

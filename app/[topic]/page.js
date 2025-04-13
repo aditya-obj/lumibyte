@@ -8,6 +8,7 @@ import QuestionCard from '@/components/QuestionCard';
 import { createSlug } from '@/utils/helpers';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import React from 'react';
+import Loader from '@/components/Loader';
 
 export default function TopicPage({ params }) {
   const unwrappedParams = React.use(params);
@@ -65,12 +66,7 @@ export default function TopicPage({ params }) {
   }, [user, topic]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen p-8 bg-[#1a1a1a] text-gray-400 flex flex-col items-center justify-center">
-        <PulseLoader color="#9333ea" size={15} margin={2} />
-        <p className="mt-4 text-sm text-gray-400">Loading questions...</p>
-      </div>
-    );
+    return <Loader />;
   }
 
   return (

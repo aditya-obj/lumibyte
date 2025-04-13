@@ -1,4 +1,5 @@
-'use client'
+'use client';
+import Loader from '@/components/Loader';
 import ActivityHeatmap from '@/components/ActivityHeatmap';
 import { auth, db } from '@/components/firebase.config';
 import { format } from 'date-fns';

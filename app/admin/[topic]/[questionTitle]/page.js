@@ -13,6 +13,7 @@ import { PulseLoader } from 'react-spinners';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import Link from 'next/link';
 import { createSlug } from '@/utils/helpers';
+import Loader from '@/components/Loader';
 
 // Add the splitExamples function at the top level
 const splitExamples = (examples) => {
@@ -338,12 +339,7 @@ export default function QuestionPage({ params }) {
   }, [unwrappedParams]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen p-8 bg-[#1a1a1a] text-gray-400 flex flex-col items-center justify-center">
-        <PulseLoader color="#9333ea" size={15} margin={2} />
-        <p className="mt-4 text-sm text-gray-400">Loading question...</p>
-      </div>
-    );
+    return <Loader />;
   }
 
   if (!question) {

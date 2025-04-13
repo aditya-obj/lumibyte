@@ -1,4 +1,5 @@
 'use client';
+import Loader from '@/components/Loader';
 import Login from '@/components/Login';
 import { auth, db } from '@/components/firebase.config';
 import { format } from 'date-fns';
