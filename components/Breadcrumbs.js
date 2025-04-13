@@ -35,6 +35,7 @@ export default function Breadcrumbs({ previousPath }) {
       }
       
       let crumbs = [baseCrumb];
+      const pathSegments = pathname.split('/').filter(Boolean);
       
       // Handle dashboard route
       if (pathname === '/dashboard') {
@@ -54,18 +55,37 @@ export default function Breadcrumbs({ previousPath }) {
         );
       }
       
-      // Handle topic route (new)
-      else if (pathname.split('/').length === 2) {
-        const topic = pathname.split('/')[1];
+      // Handle edit route for questions
+      else if (pathSegments.length === 3 && pathSegments[2] === 'edit') {
+        const [topic, questionTitle] = pathSegments;
+        crumbs.push(
+          { 
+            label: formatQuestionTitle(topic), 
+            path: `/${topic}` 
+          },
+          { 
+            label: formatQuestionTitle(questionTitle), 
+            path: `/${topic}/${questionTitle}` 
+          },
+          { 
+            label: 'Edit', 
+            path: pathname 
+          }
+        );
+      }
+      
+      // Handle topic route
+      else if (pathSegments.length === 1) {
+        const topic = pathSegments[0];
         crumbs.push({
           label: formatQuestionTitle(topic),
           path: pathname
         });
       }
       
-      // Handle dynamic question routes
-      else if (pathname.split('/').length === 3) {
-        const [, topic, questionTitle] = pathname.split('/');
+      // Handle question route
+      else if (pathSegments.length === 2) {
+        const [topic, questionTitle] = pathSegments;
         if (previousPath?.includes('dashboard')) {
           crumbs.push(
             { label: 'Dashboard', path: '/dashboard' },

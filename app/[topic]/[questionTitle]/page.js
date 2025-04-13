@@ -406,9 +406,25 @@ export default function QuestionPage({ params }) {
             <div className="px-2 py-1 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400">
               {question?.topic}
             </div>
+            
+            {/* Link button */}
+            {question?.questionLink && (
+              <a
+                href={question.questionLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium 
+                  bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Link
+              </a>
+            )}
           </div>
 
-          {/* Right side - Revise and Edit buttons */}
+          {/* Right side - Revise, Link and Edit buttons */}
           <div className="flex items-center gap-2">
             <button
               onClick={handleRevision}
@@ -424,9 +440,9 @@ export default function QuestionPage({ params }) {
               {question?.lastRevised ? 'Revised' : 'Mark as Revised'}
             </button>
 
-            {user && (
+            {user && question && (
               <Link
-                href={`/edit/question?id=${question?.id}`}
+                href={`/${unwrappedParams.topic}/${unwrappedParams.questionTitle}/edit?id=${question.id}`}
                 className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium 
                   bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
               >
