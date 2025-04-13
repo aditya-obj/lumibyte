@@ -12,6 +12,7 @@
     "@monaco-editor/react": "^4.7.0",
     "date-fns": "^4.1.0",
     "firebase": "^11.5.0",
+    "framer-motion": "^12.6.5",
     "marked": "^15.0.7",
     "next": "15.2.4",
     "prismjs": "^1.30.0",

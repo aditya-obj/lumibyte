@@ -331,11 +331,26 @@ export default function Dashboard() {
                         <div className="mt-auto"> 
                           <Link 
                             href={`/${createSlug(question.topic)}/${createSlug(question.title)}`}
-                            className="inline-flex items-center justify-center w-full gap-2 px-4 py-2 bg-gradient-to-r from-blue-600/80 to-indigo-600/80 text-white text-sm font-medium rounded-md transition-all duration-300 ease-in-out group-hover:from-blue-600 group-hover:to-indigo-600 group-hover:shadow-lg group-hover:shadow-blue-500/30 group-hover:-translate-y-1"
+                            className="inline-flex items-center justify-center w-full gap-2 px-4 py-2 
+                              bg-gray-800/80 hover:bg-gray-800/90
+                              text-blue-300 rounded-md transition-all duration-300 
+                              border border-blue-500/20
+                              hover:shadow-[0_0_20px_rgba(59,130,246,0.1)]
+                              hover:-translate-y-0.5 group"
                           >
                             View Details
-                            <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                            <svg 
+                              className="w-4 h-4 transition-transform group-hover:translate-x-1" 
+                              fill="none" 
+                              stroke="currentColor" 
+                              viewBox="0 0 24 24"
+                            >
+                              <path 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round" 
+                                strokeWidth={2} 
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" 
+                              />
                             </svg>
                           </Link>
                         </div>

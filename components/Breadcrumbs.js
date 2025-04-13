@@ -138,26 +138,52 @@ export default function Breadcrumbs({ previousPath }) {
           {user ? (
             <button 
               onClick={() => auth.signOut()}
-              className="glass-button bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-1.5 rounded-xl transition-all duration-300 font-medium hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] hover:-translate-y-1 cursor-pointer text-sm"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 
+                bg-gray-800/80 hover:bg-gray-800/90
+                text-rose-300 rounded-xl transition-all duration-300 
+                border border-rose-500/20
+                hover:shadow-[0_0_20px_rgba(244,63,94,0.1)]
+                hover:-translate-y-0.5 group"
             >
-              <span className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Logout
-              </span>
+              <svg 
+                className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" 
+                />
+              </svg>
+              <span className="font-medium">Logout</span>
             </button>
           ) : (
             <button 
               onClick={() => setShowLogin(true)}
-              className="glass-button bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-1.5 rounded-xl transition-all duration-300 font-medium hover:shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:-translate-y-1 cursor-pointer text-sm"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 
+                bg-gray-800/80 hover:bg-gray-800/90
+                text-blue-300 rounded-xl transition-all duration-300 
+                border border-blue-500/20
+                hover:shadow-[0_0_20px_rgba(59,130,246,0.1)]
+                hover:-translate-y-0.5 group"
             >
-              <span className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                </svg>
-                Login
-              </span>
+              <svg 
+                className="w-4 h-4 transition-transform group-hover:translate-x-0.5" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" 
+                />
+              </svg>
+              <span className="font-medium">Login</span>
             </button>
           )}
         </div>
