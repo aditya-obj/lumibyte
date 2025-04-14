@@ -414,9 +414,10 @@ export default function QuestionsPage() {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 text-gray-100
-                  placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50
-                  focus:border-transparent transition-all duration-200 hover:bg-gray-900/70"
+                className="w-full bg-[#0a0a0a] border border-gray-700 rounded-xl px-4 py-3 text-gray-100
+                  font-mono text-sm placeholder-gray-500 focus:outline-none focus:border-gray-400 
+                  focus:border-2 transition-all duration-200
+                  shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]"
                 placeholder="Enter a descriptive title..."
                 required
               />
@@ -428,9 +429,10 @@ export default function QuestionsPage() {
                 type="url"
                 value={questionLink}
                 onChange={(e) => setQuestionLink(e.target.value)}
-                className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3 text-gray-100
-                  placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50
-                  focus:border-transparent transition-all duration-200 hover:bg-gray-900/70"
+                className="w-full bg-[#0a0a0a] border border-gray-700 rounded-xl px-4 py-3 text-gray-100
+                  font-mono text-sm placeholder-gray-500 focus:outline-none focus:border-gray-400 
+                  focus:border-2 transition-all duration-200
+                  shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]"
                 placeholder="Enter question link (e.g., LeetCode, HackerRank)..."
               />
             </div>
@@ -451,7 +453,7 @@ export default function QuestionsPage() {
                       px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300
                       ${topic === t
                         ? 'bg-purple-500/20 text-purple-300 ring-2 ring-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
-                        : 'bg-gray-900/50 text-gray-400 hover:bg-gray-800/70 hover:text-gray-300'
+                        : 'bg-[#111111] text-gray-400 hover:bg-[#161616] hover:text-gray-300'
                       }
                     `}
                   >
@@ -494,7 +496,7 @@ export default function QuestionsPage() {
                           : diff === 'Medium'
                           ? 'bg-yellow-500/20 text-yellow-400 ring-2 ring-yellow-500/50'
                           : 'bg-red-500/20 text-red-400 ring-2 ring-red-500/50'
-                        : 'bg-gray-900/50 text-gray-400 hover:bg-gray-800/70 hover:text-gray-300'
+                        : 'bg-[#111111] text-gray-400 hover:bg-[#161616] hover:text-gray-300'
                       }
                     `}
                   >
@@ -514,16 +516,12 @@ export default function QuestionsPage() {
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full h-[250px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3
-                  text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2
-                  focus:ring-purple-500/50 focus:border-transparent resize-none
-                  transition-all duration-200 hover:bg-gray-900/70
-                  hover:border-gray-600 backdrop-blur-sm
-                  shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]
-                  hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]
-                  scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900/50"
+                className="w-full h-[250px] bg-[#0a0a0a] border border-gray-700 rounded-xl px-4 py-3
+                  text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none 
+                  focus:border-gray-400 focus:border-2 resize-none
+                  transition-all duration-200
+                  shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]"
                 placeholder="Enter the problem description..."
-                required
               />
               <div className="absolute right-3 bottom-3 px-2 py-1 bg-gray-900/50 rounded-md text-xs text-gray-500">
                 Markdown supported
@@ -540,14 +538,11 @@ export default function QuestionsPage() {
               <textarea
                 value={examples}
                 onChange={(e) => setExamples(e.target.value)}
-                className="w-full h-[200px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3
-                  text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2
-                  focus:ring-purple-500/50 focus:border-transparent resize-none
-                  transition-all duration-200 hover:bg-gray-900/70
-                  hover:border-gray-600 backdrop-blur-sm
-                  shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]
-                  hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]
-                  scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900/50"
+                className="w-full h-[200px] bg-[#0a0a0a] border border-gray-700 rounded-xl px-4 py-3
+                  text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none 
+                  focus:border-gray-400 focus:border-2 resize-none
+                  transition-all duration-200
+                  shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]"
                 placeholder="Input: nums = [1, 2, 3]&#10;Output: [1, 2, 3]&#10;Explanation: Example details..."
                 required
               />
@@ -566,14 +561,11 @@ export default function QuestionsPage() {
               <textarea
                 value={constraints}
                 onChange={(e) => setConstraints(e.target.value)}
-                className="w-full h-[150px] bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3
-                  text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none focus:ring-2
-                  focus:ring-purple-500/50 focus:border-transparent resize-none
-                  transition-all duration-200 hover:bg-gray-900/70
-                  hover:border-gray-600 backdrop-blur-sm
-                  shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]
-                  hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]
-                  scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900/50"
+                className="w-full h-[150px] bg-[#0a0a0a] border border-gray-700 rounded-xl px-4 py-3
+                  text-gray-100 font-mono text-sm placeholder-gray-500 focus:outline-none 
+                  focus:border-gray-400 focus:border-2 resize-none
+                  transition-all duration-200
+                  shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]"
                 placeholder="• 1 <= nums.length <= 10^5&#10;• -10^9 <= nums[i] <= 10^9"
                 required
               />
@@ -591,14 +583,14 @@ export default function QuestionsPage() {
             <p className="text-sm text-gray-400 mb-6">Provide starter code for all supported languages</p>
 
             {/* Tabs for each language */}
-            <div className="mb-4 border-b border-gray-700">
-              <div className="flex overflow-x-auto">
+            <div className="mb-4 border-b border-gray-700"> {/* Removed bg color */}
+              <div className="flex"> {/* Removed bg color */}
                 {availableLanguages.map(lang => (
                   <button
                     key={lang}
                     type="button"
                     onClick={() => handleLanguageTabChange(lang)}
-                    className={`px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap
+                    className={`px-6 py-2 text-sm font-medium transition-colors relative whitespace-nowrap
                       ${selectedLanguage === lang ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
                   >
                     {lang.charAt(0).toUpperCase() + lang.slice(1)}
@@ -610,10 +602,10 @@ export default function QuestionsPage() {
               </div>
             </div>
 
-            {/* Editor for the selected language */}
-            <div className="h-[200px] rounded-xl overflow-hidden border border-gray-700">
+            {/* Editor container */}
+            <div className="rounded-xl overflow-hidden border border-gray-700/50">
               <Editor
-                height="100%"
+                height="300px" // Changed from default height to 300px
                 defaultLanguage={selectedLanguage}
                 value={emptyCode[selectedLanguage]}
                 onChange={(value) => {
@@ -627,8 +619,17 @@ export default function QuestionsPage() {
                   minimap: { enabled: false },
                   fontSize: 14,
                   scrollBeyondLastLine: false,
-                  padding: { top: 10, bottom: 10 },
+                  padding: { top: 16, bottom: 16 },
                   automaticLayout: true,
+                  theme: {
+                    colors: {
+                      'editor.background': '#0a0a0a',
+                      'editor.lineHighlightBackground': '#111111',
+                      'editorGutter.background': '#0a0a0a',
+                      'editorLineNumber.foreground': '#444444',
+                      'editorLineNumber.activeForeground': '#666666',
+                    }
+                  }
                 }}
               />
             </div>
@@ -657,15 +658,15 @@ export default function QuestionsPage() {
                 </button>
               </div>
 
-              {/* Tabs for each language */}
+              {/* Language Tabs */}
               <div className="mb-4 border-b border-gray-700">
-                <div className="flex overflow-x-auto">
+                <div className="flex">
                   {availableLanguages.map(lang => (
                     <button
                       key={lang}
                       type="button"
                       onClick={() => handleLanguageTabChange(lang)}
-                      className={`px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap
+                      className={`px-6 py-2 text-sm font-medium transition-colors relative whitespace-nowrap
                         ${selectedLanguage === lang ? 'text-white' : 'text-gray-400 hover:text-gray-300'}`}
                     >
                       {lang.charAt(0).toUpperCase() + lang.slice(1)}
@@ -676,118 +677,88 @@ export default function QuestionsPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Solutions Editor */}
+              {(solutions[selectedLanguage] || []).map((solution, index) => (
+                <div key={index} className="mb-8 p-6 bg-gray-800/30 rounded-xl">
+                  <div className="flex flex-col space-y-4 mb-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-medium text-purple-300">Solution {index + 1}</h3>
+                      {(solutions[selectedLanguage] || []).length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeSolution(index)}
+                          className="text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Code Editor */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-gray-300">
+                        Code <span className="text-red-400">*</span>
+                      </label>
+                      <div className="rounded-xl overflow-hidden border border-gray-700/50">
+                        <Editor
+                          height="300px"
+                          defaultLanguage={solution.language}
+                          value={solution.code}
+                          onChange={(value) => updateSolution(index, 'code', value)}
+                          theme="vs-dark"
+                          options={{
+                            minimap: { enabled: false },
+                            fontSize: 14,
+                            scrollBeyondLastLine: false,
+                            padding: { top: 16, bottom: 16 },
+                            theme: {
+                              colors: {
+                                'editor.background': '#0a0a0a',
+                                'editor.lineHighlightBackground': '#111111',
+                                'editorGutter.background': '#0a0a0a',
+                                'editorLineNumber.foreground': '#444444',
+                                'editorLineNumber.activeForeground': '#666666',
+                              }
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-
-            {(solutions[selectedLanguage] || []).map((solution, index) => (
-              <div key={index} className="mb-8 p-6 bg-gray-800/30 rounded-xl">
-                <div className="flex flex-col space-y-4 mb-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium text-purple-300">Solution {index + 1}</h3>
-                    {/* Show remove button only if there's more than one solution */}
-                    {(solutions[selectedLanguage] || []).length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeSolution(index)}
-                        className="text-red-400 hover:text-red-300 transition-colors"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Language selector for this specific solution */}
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm text-gray-400">Language:</label>
-                    <select
-                      value={solution.language}
-                      onChange={(e) => updateSolution(index, 'language', e.target.value)}
-                      className="bg-gray-800/50 text-white text-sm rounded-md px-3 py-1.5 appearance-none focus:outline-none focus:ring-1 focus:ring-purple-500 border border-gray-700"
-                    >
-                      {availableLanguages.map(lang => (
-                        <option key={lang} value={lang}>
-                          {lang.charAt(0).toUpperCase() + lang.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Title and Time Complexity in one line */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-gray-300">
-                      Solution Title <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={solution.title}
-                      onChange={(e) => updateSolution(index, 'title', e.target.value)}
-                      className="w-full px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="Solution title..."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-gray-300">
-                      Time Complexity <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={solution.timeComplexity}
-                      onChange={(e) => updateSolution(index, 'timeComplexity', e.target.value)}
-                      className="w-full px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="e.g., O(n)"
-                    />
-                  </div>
-                </div>
-
-                {/* Approach in another line with increased height */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2 text-gray-300">
-                    Approach (Optional)
-                  </label>
-                  <textarea
-                    value={solution.approach}
-                    onChange={(e) => updateSolution(index, 'approach', e.target.value)}
-                    className="w-full h-[200px] px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                    placeholder="Explain your approach..."
-                  />
-                </div>
-
-                {/* Code Editor */}
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-300">
-                    Code <span className="text-red-400">*</span>
-                  </label>
-                  <div className="h-[300px] rounded-lg overflow-hidden">
-                    <Editor
-                      height="100%"
-                      defaultLanguage={selectedLanguage}
-                      value={solution.code}
-                      onChange={(value) => updateSolution(index, 'code', value)}
-                      theme="vs-dark"
-                      options={{
-                        minimap: { enabled: false },
-                        fontSize: 14,
-                        scrollBeyondLastLine: false,
-                        padding: { top: 10, bottom: 10 },
-                        automaticLayout: true,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
 
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl
-            transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/30 hover:-translate-y-1
-            font-semibold text-lg mb-8"
+          className="mb-4 w-full flex items-center justify-center gap-2 bg-[#1a1a1a] px-6 py-4 rounded-xl
+            text-[#4ecca3] font-medium text-base border border-[#4ecca3]/20
+            transition-all duration-200 
+            hover:bg-[#222222]
+            hover:text-[#5eddb4]
+            hover:border-[#4ecca3]/30
+            hover:shadow-[0_0_10px_rgba(78,204,163,0.1)]
+            focus:outline-none 
+            group"
         >
-          Add Question
+          <svg 
+            className="w-5 h-5" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          <span>Add New Question</span>
         </button>
 
         {/* Notifications are now shown at the top of the page */}
