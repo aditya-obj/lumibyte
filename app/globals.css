@@ -1,47 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #ad6363;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --secondary: #4b5563;
-  --accent: #22c55e;
-  --accent-hover: #16a34a;
-  --code-bg: #f3f4f6;
+  --background: #0f172a;
+  --foreground: #e2e8f0;
+  --primary: #60a5fa;
+  --primary-hover: #3b82f6;
+  --secondary: #94a3b8;
+  --accent: #4ade80;
+  --accent-hover: #22c55e;
+  --code-bg: #1e293b;
 
-  --white-foreground: #292929;
+  --white-foreground: #e2e8f0;
   --seekbar: #4a4a4a;
-  --white: #202020;
-  --black: #ffffffb8;
-  --color: #ffffff;
-  --theme-color: #c99700;
-  --orange: #c99700;
+  --white: #ffffff;
+  --black: #0f172a;
+  --color: #e2e8f0;
+  --theme-color: #60a5fa;
+  --orange: #f59e0b;
 
   /* Modern Scrollbar Styles */
-  --scrollbar-width: 8px; /* Made thinner */
-  --scrollbar-height: 8px; /* Made thinner */
-  --scrollbar-track-color: rgba(55, 65, 81, 0.1);
-  --scrollbar-thumb-color: rgba(99, 102, 241, 0.4); /* Adjusted opacity */
-  --scrollbar-thumb-hover-color: rgba(99, 102, 241, 0.6); /* Adjusted opacity */
-  --scrollbar-border-radius: 4px; /* Adjusted to match width */
+  --scrollbar-width: 8px;
+  --scrollbar-height: 8px;
+  --scrollbar-track-color: rgba(55, 65, 81, 0.3);
+  --scrollbar-thumb-color: rgba(99, 102, 241, 0.4);
+  --scrollbar-thumb-hover-color: rgba(99, 102, 241, 0.6);
+  --scrollbar-border-radius: 4px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    --foreground: #e2e8f0;
-    --primary: #60a5fa;
-    --primary-hover: #3b82f6;
-    --secondary: #94a3b8;
-    --accent: #4ade80;
-    --accent-hover: #22c55e;
-    --code-bg: #1e293b;
-  }
-}
-
+/* Remove dark mode media query since we're using dark theme by default */
 body {
-  background: linear-gradient(135deg, var(--background), color-mix(in srgb, var(--background) 90%, var(--primary)));
+  background: #1a1a1a;
   color: var(--foreground);
   font-family: system-ui, -apple-system, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
