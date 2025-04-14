@@ -271,12 +271,60 @@ export default function Dashboard() {
           {loading ? (
             <Loader />
           ) : questions.length === 0 ? (
-            <div className="text-center py-16 bg-gray-800/30 rounded-lg border border-dashed border-gray-700">
-              <svg className="mx-auto h-12 w-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2z" />
-              </svg>
-              <h3 className="mt-2 text-lg font-medium text-gray-300">No questions revised yet</h3>
-              <p className="mt-1 text-sm text-gray-500">Start revising some questions to see them here.</p>
+            <div className="mt-4 text-center py-16 bg-gray-800/30 rounded-2xl border border-gray-700/50 backdrop-blur-sm">
+              <div className="flex flex-col items-center justify-center gap-4">
+                {/* Icon */}
+                <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mb-2">
+                  <svg 
+                    className="w-8 h-8 text-purple-400" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor" 
+                    aria-hidden="true"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={1.5} 
+                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                    />
+                  </svg>
+                </div>
+                
+                {/* Text Content */}
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold text-purple-300">
+                    No Questions Yet
+                  </h3>
+                  <p className="text-gray-400 max-w-sm mx-auto">
+                    Start your learning journey by adding some questions to your collection.
+                  </p>
+                </div>
+
+                {/* Action Button */}
+                <Link 
+                  href="/"
+                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-500/20 text-purple-300 
+                    rounded-xl transition-all duration-300 hover:bg-purple-500/30 
+                    ring-1 ring-purple-500/30 hover:ring-purple-500/50
+                    hover:shadow-[0_0_20px_rgba(168,85,247,0.2)] hover:-translate-y-0.5"
+                >
+                  <svg 
+                    className="w-5 h-5" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  Browse Questions
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="space-y-12">
@@ -310,9 +358,10 @@ export default function Dashboard() {
               viewBox="0 0 24 24" 
               fill="none" 
               stroke="currentColor" 
-              strokeWidth={2} 
+              strokeWidth={2.5} 
               strokeLinecap="round" 
               strokeLinejoin="round"
+              className="w-5 h-5"
             >
               <path d="M18 15l-6-6-6 6"/>
             </svg>

@@ -14,8 +14,30 @@ export default function TopicPage({ params }) {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, questionId: null });
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const router = useRouter();
   const topic = unwrappedParams.topic;
+
+  // Add scroll to top functionality
+  useEffect(() => {
+    const checkScrollTop = () => {
+      if (!showScrollButton && window.pageYOffset > 150) {
+        setShowScrollButton(true);
+      } else if (showScrollButton && window.pageYOffset <= 150) {
+        setShowScrollButton(false);
+      }
+    };
+
+    window.addEventListener('scroll', checkScrollTop);
+    return () => window.removeEventListener('scroll', checkScrollTop);
+  }, [showScrollButton]);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
 
   // Update handleDelete to open dialog
   const handleDelete = (questionId, e) => {
@@ -158,6 +180,27 @@ export default function TopicPage({ params }) {
         title="Delete Question"
         message="Are you sure you want to delete this question? This action cannot be undone."
       />
+      {/* Add Scroll to Top Button */}
+      {showScrollButton && (
+        <button
+          onClick={scrollToTop}
+          className="scroll-to-top-button animate-fade-in"
+          aria-label="Scroll to top"
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth={2.5} 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            className="w-5 h-5"
+          >
+            <path d="M18 15l-6-6-6 6"/>
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

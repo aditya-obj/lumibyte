@@ -410,26 +410,26 @@ button:active {
   bottom: 1.5rem;
   right: 1.5rem;
   padding: 0.75rem;
-  background-color: rgba(37, 99, 235, 0.9);
-  color: white;
+  background-color: rgba(147, 51, 234, 0.2); /* Purple background with opacity */
+  color: rgb(216, 180, 254); /* Light purple text */
   border-radius: 9999px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
   z-index: 50;
   cursor: pointer;
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(59, 130, 246, 0.5);
+  border: 1px solid rgba(147, 51, 234, 0.3); /* Purple border */
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;  /* Fixed width */
-  height: 2.75rem; /* Fixed height */
+  width: 2.75rem;
+  height: 2.75rem;
 }
 
 .scroll-to-top-button:hover {
-  background-color: rgba(29, 78, 216, 0.9);
+  background-color: rgba(147, 51, 234, 0.3);
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(147, 51, 234, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
 }
 
 .scroll-to-top-button:active {

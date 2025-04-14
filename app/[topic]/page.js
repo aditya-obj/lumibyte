@@ -10,11 +10,34 @@ import Loader from '@/components/Loader';
 
 export default function TopicPage({ params }) {
   const unwrappedParams = React.use(params);
-  const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [questions, setQuestions] = useState([]);
   const [user, setUser] = useState(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const router = useRouter();
   const topic = unwrappedParams.topic;
+
+  // Effect to handle scroll event listener for the button
+  useEffect(() => {
+    const checkScrollTop = () => {
+      if (!showScrollButton && window.pageYOffset > 150) {
+        setShowScrollButton(true);
+      } else if (showScrollButton && window.pageYOffset <= 150) {
+        setShowScrollButton(false);
+      }
+    };
+
+    window.addEventListener('scroll', checkScrollTop);
+    return () => window.removeEventListener('scroll', checkScrollTop);
+  }, [showScrollButton]);
+
+  // Function to scroll smoothly to the top
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
@@ -75,15 +98,6 @@ export default function TopicPage({ params }) {
             <h1 className="text-2xl sm:text-3xl font-bold text-white capitalize">
               {topic.replace(/-/g, ' ')}
             </h1>
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back
-            </button>
           </div>
 
           {questions.length > 0 ? (
@@ -106,6 +120,26 @@ export default function TopicPage({ params }) {
           )}
         </div>
       </div>
+      {showScrollButton && (
+        <button
+          onClick={scrollToTop}
+          className="scroll-to-top-button animate-fade-in"
+          aria-label="Scroll to top"
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth={2.5} 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            className="w-5 h-5"
+          >
+            <path d="M18 15l-6-6-6 6"/>
+          </svg>
+        </button>
+      )}
     </div>
   );
 }
