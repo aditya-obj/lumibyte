@@ -37,138 +37,93 @@ export default function Breadcrumbs({ previousPath }) {
       }
       
       let crumbs = [baseCrumb];
-      // Remove query parameters from pathname before splitting
       const cleanPathname = pathname.split('?')[0];
       const pathSegments = cleanPathname.split('/').filter(Boolean);
-      
+
       // Handle dashboard route
-      if (pathname === '/dashboard') {
+      if (pathSegments[0] === 'dashboard') {
         crumbs.push({ label: 'Dashboard', path: '/dashboard' });
-      }
-      
-      // Handle admin routes
-      if (cleanPathname.startsWith('/admin')) {
-        crumbs.push({ label: 'Admin', path: '/admin' });
         
-        // Handle admin/[topic]/[questionTitle]/edit route
-        if (pathSegments.length === 4 && pathSegments[3] === 'edit') {
-          const [_, topic, questionTitle] = pathSegments.slice(1, 3);
-          if (topic && questionTitle) {
-            crumbs.push(
-              { 
-                label: formatQuestionTitle(topic), 
-                path: `/admin/${topic}` 
-              },
-              { 
-                label: formatQuestionTitle(questionTitle.replace(/-/g, ' ')), 
-                path: `/admin/${topic}/${questionTitle}` 
-              },
-              {
-                label: 'Edit',
-                path: cleanPathname
-              }
-            );
-          }
-        }
-        // Handle admin/[topic]/[questionTitle] route
-        else if (pathSegments.length === 3) {
-          const [_, topic, questionTitle] = pathSegments;
-          if (topic && questionTitle) {  // Add null check
-            crumbs.push(
-              { 
-                label: formatQuestionTitle(topic), 
-                path: `/admin/${topic}` 
-              },
-              { 
-                label: formatQuestionTitle(questionTitle), 
-                path: `/admin/${topic}/${questionTitle}` 
-              }
-            );
-          }
-        }
-        // Handle admin/[topic] route
-        else if (pathSegments.length === 2 && pathSegments[1] !== 'questions') {
-          const [_, topic] = pathSegments;
-          if (topic) {  // Add null check
+        // If there are more segments after dashboard, add them
+        if (pathSegments.length > 1) {
+          const questionTitle = pathSegments[2];
+          if (questionTitle) {
             crumbs.push({
-              label: formatQuestionTitle(topic),
-              path: `/admin/${topic}`
+              label: formatQuestionTitle(questionTitle),
+              path: `/${pathSegments[1]}/${questionTitle}`
             });
           }
         }
-        // Handle admin/questions route
-        else if (pathSegments[1] === 'questions') {
+      }
+      
+      // Handle admin routes
+      else if (pathSegments[0] === 'admin') {
+        crumbs.push({ label: 'Admin', path: '/admin' });
+        
+        if (pathSegments[1] === 'questions') {
           crumbs.push({ label: 'Questions', path: '/admin/questions' });
+        }
+        else if (pathSegments.length >= 2) {
+          const topic = pathSegments[1];
+          crumbs.push({
+            label: formatQuestionTitle(topic),
+            path: `/admin/${topic}`
+          });
+
+          if (pathSegments.length >= 3) {
+            const questionTitle = pathSegments[2];
+            crumbs.push({
+              label: formatQuestionTitle(questionTitle),
+              path: `/admin/${topic}/${questionTitle}`
+            });
+
+            if (pathSegments.length === 4 && pathSegments[3] === 'edit') {
+              crumbs.push({
+                label: 'Edit',
+                path: cleanPathname
+              });
+            }
+          }
         }
       }
       
-      // Handle [topic]/[questionTitle]/edit route
-      else if (pathSegments.length === 3 && pathSegments[2] === 'edit') {
-        const [topic, questionTitle] = pathSegments.slice(0, 2);
-        if (topic && questionTitle) {  // Add null check
-          if (previousPath?.includes('dashboard')) {
-            crumbs.push(
-              { label: 'Dashboard', path: '/dashboard' },
-              { 
-                label: formatQuestionTitle(questionTitle), 
-                path: `/${topic}/${questionTitle}` 
-              },
-              {
-                label: 'Edit',
-                path: pathname
-              }
-            );
-          } else {
-            crumbs.push(
-              { 
-                label: formatQuestionTitle(topic), 
-                path: `/${topic}` 
-              },
-              { 
-                label: formatQuestionTitle(questionTitle), 
-                path: `/${topic}/${questionTitle}` 
-              },
-              {
-                label: 'Edit',
-                path: pathname
-              }
-            );
-          }
-        }
-      }
-      // Handle [topic]/[questionTitle] route
-      else if (pathSegments.length === 2) {
-        const [topic, questionTitle] = pathSegments;
-        if (topic && questionTitle) {  // Add null check
-          if (previousPath?.includes('dashboard')) {
-            crumbs.push(
-              { label: 'Dashboard', path: '/dashboard' },
-              { 
-                label: formatQuestionTitle(questionTitle), 
-                path: pathname 
-              }
-            );
-          } else {
-            crumbs.push(
-              { 
-                label: formatQuestionTitle(topic), 
-                path: `/${topic}` 
-              },
-              { 
-                label: formatQuestionTitle(questionTitle), 
-                path: pathname 
-              }
-            );
-          }
-        }
-      }
-      // Handle topic route
-      else if (pathSegments.length === 1) {
+      // Handle regular routes
+      else if (pathSegments.length >= 1) {
         const topic = pathSegments[0];
-        if (topic) {  // Add null check
+        
+        // If coming from dashboard, show different breadcrumb structure
+        if (previousPath?.includes('dashboard')) {
+          crumbs.push(
+            { label: 'Dashboard', path: '/dashboard' }
+          );
+          
+          if (pathSegments.length >= 2) {
+            const questionTitle = pathSegments[1];
+            crumbs.push({
+              label: formatQuestionTitle(questionTitle),
+              path: `/${topic}/${questionTitle}`
+            });
+          }
+        } else {
           crumbs.push({
             label: formatQuestionTitle(topic),
-            path: pathname
+            path: `/${topic}`
+          });
+
+          if (pathSegments.length >= 2) {
+            const questionTitle = pathSegments[1];
+            crumbs.push({
+              label: formatQuestionTitle(questionTitle),
+              path: `/${topic}/${questionTitle}`
+            });
+          }
+        }
+
+        // Add Edit if it's an edit route
+        if (pathSegments[pathSegments.length - 1] === 'edit') {
+          crumbs.push({
+            label: 'Edit',
+            path: cleanPathname
           });
         }
       }
