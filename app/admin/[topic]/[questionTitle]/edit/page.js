@@ -29,7 +29,6 @@ function EditQuestionContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const questionId = searchParams.get('id');
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [title, setTitle] = useState('');
@@ -43,6 +42,7 @@ function EditQuestionContent() {
   const [topics, setTopics] = useState(['Others']);
   const [showCustomTopic, setShowCustomTopic] = useState(false);
   const [customTopic, setCustomTopic] = useState('');
+  const [questionId, setQuestionId] = useState('');
 
   // Programming language selection - fixed set of languages
   const [availableLanguages] = useState(['python', 'c', 'cpp', 'java']);
@@ -151,6 +151,8 @@ function EditQuestionContent() {
         topic: finalTopic,
         difficulty,
         questionLink,
+        solutions,           // Include solutions
+        empty_code: emptyCode, // Include empty_code
         updatedAt: new Date().toISOString()
       };
 
@@ -178,14 +180,22 @@ function EditQuestionContent() {
 
   useEffect(() => {
     const fetchQuestion = async () => {
-      if (!questionId) {
+      const id = searchParams.get('id');
+      
+      if (!id) {
         console.log('Missing question ID');
+        setNotification({
+          show: true,
+          message: 'Question ID is missing',
+          type: 'error'
+        });
+        router.push('/admin');
         return;
       }
 
       try {
         console.log('Fetching question data...');
-        const questionRef = ref(db, `public/questions/${questionId}`);
+        const questionRef = ref(db, `public/questions/${id}`);
         const snapshot = await get(questionRef);
         
         if (snapshot.exists()) {
@@ -199,6 +209,7 @@ function EditQuestionContent() {
           setTopic(questionData.topic || '');
           setDifficulty(questionData.difficulty || 'Easy');
           setQuestionLink(questionData.questionLink || '');
+          setQuestionId(id); // Make sure to set the questionId
 
           // Fetch topics from public/topics
           const topicsRef = ref(db, 'public/topics');
@@ -213,16 +224,7 @@ function EditQuestionContent() {
           }
 
           if (questionData.solutions) {
-            if (Array.isArray(questionData.solutions)) {
-              setSolutions({
-                python: questionData.solutions.map(solution => ({
-                  ...solution,
-                  language: 'python'
-                }))
-              });
-            } else {
-              setSolutions(questionData.solutions);
-            }
+            setSolutions(questionData.solutions);
           }
 
           if (questionData.empty_code) {
@@ -250,8 +252,17 @@ function EditQuestionContent() {
       }
     };
 
-    fetchQuestion();
-  }, [questionId, router]);
+    // Add auth check before fetching
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        fetchQuestion();
+      } else {
+        router.push('/login');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [searchParams, router]); // Add searchParams to dependencies
 
   useEffect(() => {
     if (!auth.currentUser) return;

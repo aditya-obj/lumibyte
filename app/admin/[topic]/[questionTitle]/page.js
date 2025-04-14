@@ -408,7 +408,7 @@ export default function QuestionPage({ params }) {
 
             {user && question && (
               <Link
-                href={`/${unwrappedParams.topic}/${unwrappedParams.questionTitle}/edit?id=${question.id}`}
+                href={`/admin/${unwrappedParams.topic}/${unwrappedParams.questionTitle}/edit?id=${question.id}`}
                 className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium 
                   bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
               >
