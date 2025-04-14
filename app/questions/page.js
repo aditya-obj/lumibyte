@@ -1,15 +1,8 @@
 'use client';
-import Loader from '@/components/Loader';
-import Login from '@/components/Login';
 import { auth, db } from '@/components/firebase.config';
-import { format } from 'date-fns';
 import { get, push, ref, update } from 'firebase/database';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { BeatLoader } from 'react-spinners';
-import { toast } from 'react-toastify';
-import Breadcrumbs from '@/components/Breadcrumbs';
 import Editor from '@monaco-editor/react';
 import { loader } from '@monaco-editor/react';
 
@@ -387,7 +380,6 @@ export default function QuestionsPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <Breadcrumbs />
       {/* Show notification if it's active */}
       {notification.show && (
         <Notification

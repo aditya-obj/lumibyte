@@ -6,11 +6,8 @@ import { get, push, ref, update } from 'firebase/database';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { BeatLoader } from 'react-spinners';
 import { toast } from 'react-toastify';
-import Breadcrumbs from '@/components/Breadcrumbs';
 import { motion } from 'framer-motion';
-import Loader from '@/components/Loader';
 
 export default function Home() {
   const [currentQuestion, setCurrentQuestion] = useState(null);
@@ -480,7 +477,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex flex-col">
-      <Breadcrumbs />
       <div className="flex-1 container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">

@@ -3,10 +3,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/components/firebase.config';
 import { ref, get } from 'firebase/database';
-import { PulseLoader } from 'react-spinners';
 import QuestionCard from '@/components/QuestionCard';
 import { createSlug } from '@/utils/helpers';
-import Breadcrumbs from '@/components/Breadcrumbs';
 import React from 'react';
 import Loader from '@/components/Loader';
 
@@ -71,7 +69,6 @@ export default function TopicPage({ params }) {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <Breadcrumbs />
       <div className="p-4 sm:p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">

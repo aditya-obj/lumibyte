@@ -5,7 +5,6 @@ import { auth, db } from '@/components/firebase.config';
 import { ref, get, remove } from 'firebase/database';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Breadcrumbs from '@/components/Breadcrumbs';
 import Loader from '@/components/Loader'; // Import the new Loader
 import { createSlug } from '@/utils/helpers';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
@@ -103,7 +102,6 @@ export default function Administration() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      <Breadcrumbs />
       <div className="max-w-7xl mx-auto p-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Public Questions</h1>

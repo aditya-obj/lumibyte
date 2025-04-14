@@ -4,7 +4,6 @@ import Editor, { loader } from '@monaco-editor/react';
 import { get, push, ref, set, update } from 'firebase/database';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import Breadcrumbs from '@/components/Breadcrumbs';
 
 export default function AdminQuestionsPage() {
   useEffect(() => {
@@ -378,7 +377,6 @@ export default function AdminQuestionsPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <Breadcrumbs />
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Header Section */}
         <div className="mb-8 sm:mb-12">

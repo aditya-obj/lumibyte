@@ -6,7 +6,6 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import React from 'react';
 import Loader from '@/components/Loader';
-import Breadcrumbs from '@/components/Breadcrumbs';
 
 // Notification component
 const Notification = ({ message, type, onClose }) => {
@@ -290,8 +289,6 @@ function EditQuestionContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-gray-200">
-      <Breadcrumbs />
-      
       {/* Show notification if it's active */}
       {notification.show && (
         <Notification

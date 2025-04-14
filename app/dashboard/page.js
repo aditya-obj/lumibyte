@@ -8,7 +8,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import Breadcrumbs from '@/components/Breadcrumbs';
 
 export default function Dashboard() {
   const [showScrollButton, setShowScrollButton] = useState(false); // State for scroll button visibility
@@ -167,7 +166,6 @@ export default function Dashboard() {
   // Render dashboard content only if user exists and has displayName
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <Breadcrumbs />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-2xl font-bold text-white">
           Welcome, {user?.displayName}

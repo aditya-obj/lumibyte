@@ -9,8 +9,6 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { MdFullscreen, MdFullscreenExit } from 'react-icons/md';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { PulseLoader } from 'react-spinners';
-import Breadcrumbs from '@/components/Breadcrumbs';
 import Link from 'next/link';
 import { createSlug } from '@/utils/helpers';
 import Loader from '@/components/Loader';
@@ -357,9 +355,6 @@ export default function QuestionPage({ params }) {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <Breadcrumbs previousPath={previousPath} />
-      {/* Top Navigation Bar */}
-
 
       {/* Problem Info Bar - Sticky on mobile */}
       <div className="sticky top-14 sm:top-16 z-40 bg-[#0a0a0a] py-2 lg:py-4 px-4">

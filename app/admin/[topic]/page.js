@@ -1,14 +1,11 @@
 'use client';
 import Loader from '@/components/Loader';
-
 import { useEffect, useState } from 'react';
 import { db } from '@/components/firebase.config';
 import { ref, get, remove } from 'firebase/database';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { PulseLoader } from 'react-spinners';
 import { createSlug } from '@/utils/helpers';
-import Breadcrumbs from '@/components/Breadcrumbs';
 import ConfirmationDialog from '@/components/ConfirmationDialog';
 import React from 'react';
 
@@ -82,7 +79,6 @@ export default function TopicPage({ params }) {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      <Breadcrumbs />
       <div className="max-w-7xl mx-auto p-8">
         {questions.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
